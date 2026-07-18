@@ -563,9 +563,29 @@
     return chineseToNumber(filtered);
   }
 
+  // 出題數字的位數機率：千位數 40%、百位數 45%、十位/個位數（0-99）20%
+  const DIGIT_RANGES = [
+    { min: 1000, max: 9999, weight: 40 },
+    { min: 100, max: 999, weight: 45 },
+    { min: 0, max: 99, weight: 20 },
+  ];
+  const DIGIT_RANGES_TOTAL = DIGIT_RANGES.reduce((sum, r) => sum + r.weight, 0);
+
+  function pickWeightedRange(){
+    let r = Math.random() * DIGIT_RANGES_TOTAL;
+    for (const range of DIGIT_RANGES){
+      if (r < range.weight) return range;
+      r -= range.weight;
+    }
+    return DIGIT_RANGES[DIGIT_RANGES.length - 1];
+  }
+
   function randomNumber(exclude){
     let n;
-    do { n = Math.floor(Math.random() * 10000); } while (n === exclude);
+    do {
+      const range = pickWeightedRange();
+      n = range.min + Math.floor(Math.random() * (range.max - range.min + 1));
+    } while (n === exclude);
     return n;
   }
 
@@ -685,9 +705,10 @@
       const total = correctCount + giveUpCount;
       stats.innerHTML =
         statCard(correctCount, 'Correctas', 'correct') +
+        statCard(wrongCount, 'Incorrectas', 'wrong') +
         statCard(giveUpCount, 'Rendidas', 'wrong') +
         statCard(total, 'Total', '');
-      trackEvent('game_complete', { mode: 'speaking', correct: correctCount, give_up: giveUpCount, total: total });
+      trackEvent('game_complete', { mode: 'speaking', correct: correctCount, wrong: wrongCount, give_up: giveUpCount, total: total });
     }
     showScreen('result');
   }
@@ -777,7 +798,7 @@
   function startSpeakingMode(){
     if (!SR) return;
     currentMode = 'speaking';
-    correctCount = 0; giveUpCount = 0;
+    correctCount = 0; giveUpCount = 0; wrongCount = 0;
     speakFeedback.className = 'feedback';
     speakFeedback.innerHTML = '';
     showScreen('speaking');
@@ -816,6 +837,7 @@
           if (currentMode === 'speaking' && timeLeft > 0) nextSpeakingNumber();
         }, 700);
       } else {
+        wrongCount++;
         speakFeedback.className = 'feedback wrong';
         const heard = guess !== null ? '(Escuché: ' + guess + ')' : '(No entendí, intenta de nuevo)';
         speakFeedback.innerHTML = '<span class="stamp">✗</span><span class="msg">Incorrecto ' + heard + '</span>';
