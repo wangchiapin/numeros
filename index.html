@@ -7,6 +7,14 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@500;700;900&family=Noto+Sans+TC:wght@400;500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<!-- Google Analytics 4 -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-RJ4G3BTCZ3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){ dataLayer.push(arguments); }
+  gtag('js', new Date());
+  gtag('config', 'G-RJ4G3BTCZ3');
+</script>
 <style>
   :root{
     --paper:#F4EEE1;
@@ -489,6 +497,13 @@
 (function(){
   "use strict";
 
+  /* ============ Analytics (GA4) ============ */
+  function trackEvent(name, params){
+    if (typeof gtag === 'function'){
+      gtag('event', name, params || {});
+    }
+  }
+
   /* ============ Chinese numeral conversion (0–9999) ============ */
   const CN_DIGIT = ['零','一','二','三','四','五','六','七','八','九'];
   const CN_UNIT = ['','十','百','千'];
@@ -665,12 +680,14 @@
         statCard(correctCount, 'Correctas', 'correct') +
         statCard(wrongCount, 'Incorrectas', 'wrong') +
         statCard(total, 'Total', '');
+      trackEvent('game_complete', { mode: 'listening', correct: correctCount, wrong: wrongCount, total: total });
     } else {
       const total = correctCount + giveUpCount;
       stats.innerHTML =
         statCard(correctCount, 'Correctas', 'correct') +
         statCard(giveUpCount, 'Rendidas', 'wrong') +
         statCard(total, 'Total', '');
+      trackEvent('game_complete', { mode: 'speaking', correct: correctCount, give_up: giveUpCount, total: total });
     }
     showScreen('result');
   }
@@ -743,6 +760,7 @@
       document.querySelectorAll('.speedBtn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       speechRate = parseFloat(btn.dataset.rate);
+      trackEvent('select_speed', { rate: speechRate, label: btn.textContent });
     });
   });
 
@@ -822,6 +840,7 @@
   el('giveUpBtn').addEventListener('click', () => {
     if (currentMode !== 'speaking' || timeLeft <= 0) return;
     giveUpCount++;
+    trackEvent('give_up', { mode: 'speaking', number: currentNumber });
     speakFeedback.className = 'feedback wrong';
     speakFeedback.innerHTML = '<span class="stamp">✗</span><span class="msg">Te rendiste · La respuesta correcta era ' + numberToChinese(currentNumber) + '</span>';
     recognitionActive = false;
@@ -832,14 +851,24 @@
   });
 
   /* ============ Nav ============ */
-  el('startListening').addEventListener('click', startListeningMode);
-  el('startSpeaking').addEventListener('click', () => { if (SR) startSpeakingMode(); });
+  el('startListening').addEventListener('click', () => {
+    trackEvent('select_mode', { mode: 'listening' });
+    startListeningMode();
+  });
+  el('startSpeaking').addEventListener('click', () => {
+    if (!SR) return;
+    trackEvent('select_mode', { mode: 'speaking' });
+    startSpeakingMode();
+  });
   backBtn.addEventListener('click', returnToMenu);
   el('menuBtn').addEventListener('click', returnToMenu);
   el('retryBtn').addEventListener('click', () => {
+    trackEvent('replay_game', { mode: currentMode });
     if (currentMode === 'listening') startListeningMode();
     else if (currentMode === 'speaking') startSpeakingMode();
   });
+
+  trackEvent('enter_main_menu');
 
 })();
 </script>
