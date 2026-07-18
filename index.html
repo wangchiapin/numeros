@@ -289,6 +289,7 @@
 
   #speedSelector{
     display:flex;
+    flex-wrap:wrap;
     justify-content:center;
     gap:8px;
     padding:16px 20px 0;
@@ -441,6 +442,7 @@
     <!-- Listening -->
     <section id="listeningScreen" class="screen">
       <div id="speedSelector" role="group" aria-label="Selección de velocidad">
+        <button class="speedBtn" type="button" data-rate="0.1">Súper Fácil</button>
         <button class="speedBtn" type="button" data-rate="0.4">Lento</button>
         <button class="speedBtn active" type="button" data-rate="1.0">Normal</button>
         <button class="speedBtn" type="button" data-rate="1.6">Rápido</button>
