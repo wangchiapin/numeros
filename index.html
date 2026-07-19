@@ -398,6 +398,33 @@
   .statCard.correct .num{ color:var(--seal); }
   .statCard.wrong .num{ color:var(--ink-soft); }
   .statCard .label{ font-size:12px; color:var(--ink-soft); margin-top:4px; }
+  .speedBreakdown{
+    display:none;
+    width:100%;
+    max-width:280px;
+    margin:0 auto 30px;
+    background:var(--paper-2);
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:14px 20px;
+  }
+  .speedBreakdownTitle{
+    font-size:12px;
+    color:var(--ink-soft);
+    text-transform:uppercase;
+    letter-spacing:0.06em;
+    margin-bottom:8px;
+    text-align:center;
+  }
+  .speedRow{
+    display:flex;
+    justify-content:space-between;
+    font-family:'Space Mono', monospace;
+    font-size:14px;
+    padding:5px 0;
+    border-bottom:1px dashed var(--line);
+  }
+  .speedRow:last-child{ border-bottom:none; }
   .resultActions{ display:flex; gap:12px; }
   .resultActions button{
     font-family:'Noto Sans TC',sans-serif;
@@ -451,7 +478,7 @@
     <section id="listeningScreen" class="screen">
       <div id="speedSelector" role="group" aria-label="Selección de velocidad">
         <button class="speedBtn" type="button" data-rate="0.1">Súper Fácil</button>
-        <button class="speedBtn" type="button" data-rate="0.4">Lento</button>
+        <button class="speedBtn" type="button" data-rate="0.6">Lento</button>
         <button class="speedBtn active" type="button" data-rate="1.0">Normal</button>
         <button class="speedBtn" type="button" data-rate="1.6">Rápido</button>
       </div>
@@ -484,6 +511,7 @@
     <section id="resultScreen" class="screen">
       <h2 id="resultTitle">¡Se acabó el tiempo!</h2>
       <div class="resultStats" id="resultStats"></div>
+      <div class="speedBreakdown" id="speedBreakdown"></div>
       <div class="resultActions">
         <button id="retryBtn" type="button">Jugar de nuevo</button>
         <button id="menuBtn" type="button">Volver al menú</button>
@@ -694,12 +722,18 @@
 
     el('resultTitle').textContent = '¡Se acabó el tiempo!';
     const stats = el('resultStats');
+    const breakdown = el('speedBreakdown');
     if (currentMode === 'listening'){
       const total = correctCount + wrongCount;
       stats.innerHTML =
         statCard(correctCount, 'Correctas', 'correct') +
         statCard(wrongCount, 'Incorrectas', 'wrong') +
         statCard(total, 'Total', '');
+      breakdown.style.display = 'block';
+      breakdown.innerHTML = '<div class="speedBreakdownTitle">Correctas por velocidad</div>' +
+        SPEED_LABELS.map(s =>
+          '<div class="speedRow"><span>' + s.label + '</span><span>' + (speedCorrectCounts[s.rate] || 0) + '</span></div>'
+        ).join('');
       trackEvent('game_complete', { mode: 'listening', correct: correctCount, wrong: wrongCount, total: total });
     } else {
       const total = correctCount + giveUpCount;
@@ -708,6 +742,8 @@
         statCard(wrongCount, 'Incorrectas', 'wrong') +
         statCard(giveUpCount, 'Rendidas', 'wrong') +
         statCard(total, 'Total', '');
+      breakdown.style.display = 'none';
+      breakdown.innerHTML = '';
       trackEvent('game_complete', { mode: 'speaking', correct: correctCount, wrong: wrongCount, give_up: giveUpCount, total: total });
     }
     showScreen('result');
@@ -730,9 +766,19 @@
   const listenFeedback = el('listenFeedback');
   let listenAdvanceTimeout = null;
 
+  const SPEED_LABELS = [
+    { rate: 0.5, label: 'Súper Fácil' },
+    { rate: 0.75, label: 'Lento' },
+    { rate: 1.0, label: 'Normal' },
+    { rate: 1.25, label: 'Rápido' },
+  ];
+  let speedCorrectCounts = {};
+  let currentQuestionRate = 1.0;
+
   function startListeningMode(){
     currentMode = 'listening';
     correctCount = 0; wrongCount = 0;
+    speedCorrectCounts = {};
     listenFeedback.className = 'feedback';
     listenFeedback.innerHTML = '';
     showScreen('listening');
@@ -746,6 +792,7 @@
     listenInput.value = '';
     listenFeedback.className = 'feedback';
     listenFeedback.innerHTML = '';
+    currentQuestionRate = speechRate;
     speak(numberToChinese(currentNumber));
     if (screens.listening.classList.contains('active')) listenInput.focus();
   }
@@ -760,6 +807,7 @@
     listenInput.blur();
     if (guess === currentNumber){
       correctCount++;
+      speedCorrectCounts[currentQuestionRate] = (speedCorrectCounts[currentQuestionRate] || 0) + 1;
       listenFeedback.className = 'feedback correct';
       listenFeedback.innerHTML = '<span class="stamp">✓</span><span class="msg">¡Correcto!</span>';
     } else {
@@ -786,6 +834,7 @@
   });
 
   el('replayBtn').addEventListener('click', () => {
+    currentQuestionRate = speechRate;
     speak(numberToChinese(currentNumber));
     listenInput.focus();
   });
