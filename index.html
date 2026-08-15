@@ -334,6 +334,31 @@
   }
   #replayBtn:hover{ border-color:var(--gold); color:var(--ink); }
 
+  #speakModeSelector{
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:center;
+    gap:8px;
+    padding:16px 20px 0;
+  }
+  .speakModeBtn{
+    background:none;
+    border:1px solid var(--line);
+    color:var(--ink-soft);
+    font-family:'Noto Sans TC',sans-serif;
+    font-size:13px;
+    padding:7px 16px;
+    border-radius:20px;
+    cursor:pointer;
+  }
+  .speakModeBtn:hover{ border-color:var(--gold); color:var(--ink); }
+  .speakModeBtn.active{
+    background:var(--ink);
+    border-color:var(--ink);
+    color:var(--paper);
+    font-weight:700;
+  }
+
   #speakControls{
     display:flex;
     flex-direction:column;
@@ -349,8 +374,22 @@
     border:1px solid var(--line);
     padding:9px 18px;
     border-radius:20px;
+    max-width:90%;
+    text-align:center;
   }
   #micStatus.listening{ color:var(--seal-dark); border-color:var(--seal); }
+  #speakConfirmBtn{
+    background:var(--seal);
+    color:#fff;
+    border:none;
+    font-family:'Noto Sans TC',sans-serif;
+    font-weight:700;
+    font-size:14px;
+    padding:10px 22px;
+    border-radius:20px;
+    cursor:pointer;
+  }
+  #speakConfirmBtn:hover{ background:var(--seal-dark); }
   #giveUpBtn{
     background:var(--ink);
     color:var(--paper);
@@ -494,6 +533,10 @@
 
     <!-- Speaking -->
     <section id="speakingScreen" class="screen">
+      <div id="speakModeSelector" role="group" aria-label="Modo de dificultad">
+        <button class="speakModeBtn active" type="button" data-mode="standard">Estándar</button>
+        <button class="speakModeBtn" type="button" data-mode="paced">Modo Pausado (más tiempo)</button>
+      </div>
       <div class="numberStage">
         <div class="numberCard">
           <div id="speakNumber" class="bigNumber">0</div>
@@ -503,6 +546,7 @@
       <div id="speakFeedback" class="feedback"></div>
       <div id="speakControls">
         <div id="micStatus">🎙️ Preparando micrófono…</div>
+        <button id="speakConfirmBtn" type="button" style="display:none;">✅ Ya terminé, confirmar</button>
         <button id="giveUpBtn" type="button">Rendirse, siguiente</button>
       </div>
     </section>
@@ -767,10 +811,10 @@
   let listenAdvanceTimeout = null;
 
   const SPEED_LABELS = [
-    { rate: 0.5, label: 'Súper Fácil' },
-    { rate: 0.75, label: 'Lento' },
+    { rate: 0.1, label: 'Súper Fácil' },
+    { rate: 0.6, label: 'Lento' },
     { rate: 1.0, label: 'Normal' },
-    { rate: 1.25, label: 'Rápido' },
+    { rate: 1.6, label: 'Rápido' },
   ];
   let speedCorrectCounts = {};
   let currentQuestionRate = 1.0;
@@ -843,6 +887,10 @@
   const speakNumberEl = el('speakNumber');
   const speakFeedback = el('speakFeedback');
   const micStatus = el('micStatus');
+  const speakConfirmBtn = el('speakConfirmBtn');
+
+  let speakDifficulty = 'standard'; // 'standard' | 'paced'
+  let pacedTranscript = '';
 
   function startSpeakingMode(){
     if (!SR) return;
@@ -860,37 +908,85 @@
     speakNumberEl.textContent = currentNumber;
     speakFeedback.className = 'feedback';
     speakFeedback.innerHTML = '';
+    pacedTranscript = '';
     startRecognitionLoop();
+  }
+
+  function configureRecognition(){
+    if (!recognition) return;
+    if (speakDifficulty === 'paced'){
+      recognition.continuous = true;
+      recognition.interimResults = true;
+    } else {
+      recognition.continuous = false;
+      recognition.interimResults = false;
+    }
   }
 
   function startRecognitionLoop(){
     if (!recognition || timeLeft <= 0) return;
+    configureRecognition();
     recognitionActive = true;
     try { recognition.start(); } catch(e){ /* already started */ }
+  }
+
+  // Check every alternative the engine offers (not just the top guess) — this
+  // helps a lot with tone/homophone slips, since the correct number is often
+  // hiding in alternative #2 or #3 even when #1 is wrong.
+  function findMatchInAlternatives(resultItem, target){
+    let firstGuess = null;
+    for (let i = 0; i < resultItem.length; i++){
+      const g = extractNumberFromSpeech(resultItem[i].transcript);
+      if (i === 0) firstGuess = g;
+      if (g !== null && g === target) return { matched: true, guess: g };
+    }
+    return { matched: false, guess: firstGuess };
+  }
+
+  function markSpeakingCorrect(){
+    correctCount++;
+    speakFeedback.className = 'feedback correct';
+    speakFeedback.innerHTML = '<span class="stamp">✓</span><span class="msg">¡Correcto!</span>';
+    recognitionActive = false;
+    if (recognition){ try { recognition.stop(); } catch(e){} }
+    setTimeout(() => {
+      if (currentMode === 'speaking' && timeLeft > 0) nextSpeakingNumber();
+    }, 700);
+  }
+
+  function markSpeakingWrong(guess){
+    wrongCount++;
+    speakFeedback.className = 'feedback wrong';
+    const heard = guess !== null ? '(Escuché: ' + guess + ')' : '(No entendí, intenta de nuevo)';
+    speakFeedback.innerHTML = '<span class="stamp">✗</span><span class="msg">Incorrecto ' + heard + '</span>';
   }
 
   if (recognition){
     recognition.onstart = () => {
       micStatus.classList.add('listening');
-      micStatus.textContent = '🎙️ Escuchando, di el número…';
+      micStatus.textContent = speakDifficulty === 'paced'
+        ? '🎙️ Escuchando… habla con calma'
+        : '🎙️ Escuchando, di el número…';
     };
     recognition.onresult = (event) => {
-      const transcript = event.results[0][0].transcript;
-      const guess = extractNumberFromSpeech(transcript);
-      if (guess !== null && guess === currentNumber){
-        correctCount++;
-        speakFeedback.className = 'feedback correct';
-        speakFeedback.innerHTML = '<span class="stamp">✓</span><span class="msg">¡Correcto!</span>';
-        recognitionActive = false;
-        setTimeout(() => {
-          if (currentMode === 'speaking' && timeLeft > 0) nextSpeakingNumber();
-        }, 700);
-      } else {
-        wrongCount++;
-        speakFeedback.className = 'feedback wrong';
-        const heard = guess !== null ? '(Escuché: ' + guess + ')' : '(No entendí, intenta de nuevo)';
-        speakFeedback.innerHTML = '<span class="stamp">✗</span><span class="msg">Incorrecto ' + heard + '</span>';
+      const lastResult = event.results[event.results.length - 1];
+
+      if (speakDifficulty === 'paced'){
+        if (!lastResult.isFinal){
+          micStatus.textContent = '🎙️ Escuchando: ' + lastResult[0].transcript;
+          return; // still talking — don't judge yet
+        }
+        // a final chunk arrived: keep accumulating, but wait for the
+        // student to press "Ya terminé" before judging anything
+        pacedTranscript += lastResult[0].transcript;
+        micStatus.textContent = '✏️ Escuché: "' + pacedTranscript + '" — pulsa "Ya terminé" cuando acabes';
+        return;
       }
+
+      // standard mode: judge immediately using every alternative
+      const { matched, guess } = findMatchInAlternatives(lastResult, currentNumber);
+      if (matched) markSpeakingCorrect();
+      else markSpeakingWrong(guess);
     };
     recognition.onerror = (event) => {
       if (event.error === 'not-allowed' || event.error === 'service-not-allowed'){
@@ -901,12 +997,50 @@
     };
     recognition.onend = () => {
       micStatus.classList.remove('listening');
-      micStatus.textContent = '🎙️ Preparando micrófono…';
+      if (speakDifficulty !== 'paced'){
+        micStatus.textContent = '🎙️ Preparando micrófono…';
+      }
       if (recognitionActive && currentMode === 'speaking' && timeLeft > 0 && screens.speaking.classList.contains('active')){
         try { recognition.start(); } catch(e){}
       }
     };
   }
+
+  document.querySelectorAll('.speakModeBtn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.speakModeBtn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      speakDifficulty = btn.dataset.mode;
+      speakConfirmBtn.style.display = speakDifficulty === 'paced' ? 'inline-block' : 'none';
+      trackEvent('select_speak_difficulty', { mode: speakDifficulty });
+      if (currentMode === 'speaking' && timeLeft > 0){
+        // reconfigure the live recognition session for the new mode
+        recognitionActive = false;
+        pacedTranscript = '';
+        if (recognition){ try { recognition.stop(); } catch(e){} }
+        setTimeout(() => { if (currentMode === 'speaking' && timeLeft > 0) startRecognitionLoop(); }, 150);
+      }
+    });
+  });
+
+  speakConfirmBtn.addEventListener('click', () => {
+    if (currentMode !== 'speaking' || timeLeft <= 0) return;
+    if (!pacedTranscript.trim()){
+      micStatus.textContent = '🎙️ Todavía no escuché nada, intenta de nuevo…';
+      return;
+    }
+    const guess = extractNumberFromSpeech(pacedTranscript);
+    if (guess !== null && guess === currentNumber){
+      markSpeakingCorrect();
+    } else {
+      markSpeakingWrong(guess);
+      pacedTranscript = '';
+      // stay on the same question — restart listening so they can retry
+      recognitionActive = false;
+      if (recognition){ try { recognition.stop(); } catch(e){} }
+      setTimeout(() => { if (currentMode === 'speaking' && timeLeft > 0) startRecognitionLoop(); }, 400);
+    }
+  });
 
   el('giveUpBtn').addEventListener('click', () => {
     if (currentMode !== 'speaking' || timeLeft <= 0) return;
