@@ -390,6 +390,18 @@
     cursor:pointer;
   }
   #speakConfirmBtn:hover{ background:var(--seal-dark); }
+  #speakRetryBtn{
+    background:none;
+    border:1px solid var(--ink);
+    color:var(--ink);
+    font-family:'Noto Sans TC',sans-serif;
+    font-weight:700;
+    font-size:14px;
+    padding:9px 21px;
+    border-radius:20px;
+    cursor:pointer;
+  }
+  #speakRetryBtn:hover{ border-color:var(--gold); color:var(--seal-dark); }
   #giveUpBtn{
     background:var(--ink);
     color:var(--paper);
@@ -547,6 +559,7 @@
       <div id="speakControls">
         <div id="micStatus">🎙️ Preparando micrófono…</div>
         <button id="speakConfirmBtn" type="button" style="display:none;">✅ Ya terminé, confirmar</button>
+        <button id="speakRetryBtn" type="button" style="display:none;">🔄 Volver a intentar</button>
         <button id="giveUpBtn" type="button">Rendirse, siguiente</button>
       </div>
     </section>
@@ -888,6 +901,7 @@
   const speakFeedback = el('speakFeedback');
   const micStatus = el('micStatus');
   const speakConfirmBtn = el('speakConfirmBtn');
+  const speakRetryBtn = el('speakRetryBtn');
 
   let speakDifficulty = 'standard'; // 'standard' | 'paced'
   let pacedTranscript = '';
@@ -1012,6 +1026,7 @@
       btn.classList.add('active');
       speakDifficulty = btn.dataset.mode;
       speakConfirmBtn.style.display = speakDifficulty === 'paced' ? 'inline-block' : 'none';
+      speakRetryBtn.style.display = speakDifficulty === 'paced' ? 'inline-block' : 'none';
       trackEvent('select_speak_difficulty', { mode: speakDifficulty });
       if (currentMode === 'speaking' && timeLeft > 0){
         // reconfigure the live recognition session for the new mode
@@ -1021,6 +1036,17 @@
         setTimeout(() => { if (currentMode === 'speaking' && timeLeft > 0) startRecognitionLoop(); }, 150);
       }
     });
+  });
+
+  speakRetryBtn.addEventListener('click', () => {
+    if (currentMode !== 'speaking' || timeLeft <= 0) return;
+    pacedTranscript = '';
+    speakFeedback.className = 'feedback';
+    speakFeedback.innerHTML = '';
+    recognitionActive = false;
+    if (recognition){ try { recognition.stop(); } catch(e){} }
+    micStatus.textContent = '🎙️ Escuchando de nuevo, empieza cuando quieras…';
+    setTimeout(() => { if (currentMode === 'speaking' && timeLeft > 0) startRecognitionLoop(); }, 300);
   });
 
   speakConfirmBtn.addEventListener('click', () => {
