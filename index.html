@@ -941,7 +941,24 @@
     if (!recognition || timeLeft <= 0) return;
     configureRecognition();
     recognitionActive = true;
-    try { recognition.start(); } catch(e){ /* already started */ }
+    safeStartRecognition(0);
+  }
+
+  // The browser sometimes throws (or the mic isn't fully torn down yet) if we
+  // call start() immediately after a stop()/end(). Retry a few times with a
+  // short delay instead of silently giving up — this is what was causing
+  // Modo Pausado to stop listening after the first phrase (e.g. "五百") and
+  // never pick up the rest ("五十二").
+  function safeStartRecognition(delay, attempt){
+    attempt = attempt || 0;
+    setTimeout(() => {
+      if (!recognitionActive || currentMode !== 'speaking' || timeLeft <= 0) return;
+      try {
+        recognition.start();
+      } catch (e){
+        if (attempt < 5) safeStartRecognition(250, attempt + 1);
+      }
+    }, delay || 0);
   }
 
   // Check every alternative the engine offers (not just the top guess) — this
@@ -987,7 +1004,7 @@
 
       if (speakDifficulty === 'paced'){
         if (!lastResult.isFinal){
-          micStatus.textContent = '🎙️ Escuchando: ' + lastResult[0].transcript;
+          micStatus.textContent = '🎙️ Escuchando: ' + pacedTranscript + lastResult[0].transcript;
           return; // still talking — don't judge yet
         }
         // a final chunk arrived: keep accumulating, but wait for the
@@ -1014,8 +1031,11 @@
       if (speakDifficulty !== 'paced'){
         micStatus.textContent = '🎙️ Preparando micrófono…';
       }
+      // Modo Pausado uses continuous listening, but some browsers still end
+      // the session after each pause — always try to resume automatically
+      // so the student's next words in the same answer aren't lost.
       if (recognitionActive && currentMode === 'speaking' && timeLeft > 0 && screens.speaking.classList.contains('active')){
-        try { recognition.start(); } catch(e){}
+        safeStartRecognition(200);
       }
     };
   }
@@ -1033,7 +1053,9 @@
         recognitionActive = false;
         pacedTranscript = '';
         if (recognition){ try { recognition.stop(); } catch(e){} }
-        setTimeout(() => { if (currentMode === 'speaking' && timeLeft > 0) startRecognitionLoop(); }, 150);
+        configureRecognition();
+        recognitionActive = true;
+        safeStartRecognition(150);
       }
     });
   });
@@ -1046,7 +1068,8 @@
     recognitionActive = false;
     if (recognition){ try { recognition.stop(); } catch(e){} }
     micStatus.textContent = '🎙️ Escuchando de nuevo, empieza cuando quieras…';
-    setTimeout(() => { if (currentMode === 'speaking' && timeLeft > 0) startRecognitionLoop(); }, 300);
+    recognitionActive = true;
+    safeStartRecognition(300);
   });
 
   speakConfirmBtn.addEventListener('click', () => {
@@ -1064,7 +1087,8 @@
       // stay on the same question — restart listening so they can retry
       recognitionActive = false;
       if (recognition){ try { recognition.stop(); } catch(e){} }
-      setTimeout(() => { if (currentMode === 'speaking' && timeLeft > 0) startRecognitionLoop(); }, 400);
+      recognitionActive = true;
+      safeStartRecognition(400);
     }
   });
 
