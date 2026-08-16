@@ -657,6 +657,26 @@
     return chineseToNumber(filtered);
   }
 
+  // A speech-recognition engine will often normalize spoken digits into a
+  // plain numeral string (e.g. "225") whether the student said the proper
+  // reading "兩百二十五" OR just read out isolated digits "二二五". Matching
+  // only the final numeric value would silently accept the digit-by-digit
+  // shortcut, which defeats the purpose of practicing number pronunciation.
+  // So on top of the value match, we require that the unit words (十/百/千)
+  // the correct reading needs actually show up somewhere in the transcript.
+  function requiredUnitChars(target){
+    const canonical = numberToChinese(target);
+    const units = [];
+    if (canonical.includes('千')) units.push('千');
+    if (canonical.includes('百')) units.push('百');
+    if (canonical.includes('十')) units.push('十');
+    return units;
+  }
+
+  function hasRequiredUnits(transcript, units){
+    return units.every(u => transcript.includes(u));
+  }
+
   // 出題數字的位數機率：千位數 40%、百位數 45%、十位/個位數（0-99）20%
   const DIGIT_RANGES = [
     { min: 1000, max: 9999, weight: 40 },
@@ -972,15 +992,24 @@
 
   // Check every alternative the engine offers (not just the top guess) — this
   // helps a lot with tone/homophone slips, since the correct number is often
-  // hiding in alternative #2 or #3 even when #1 is wrong.
+  // hiding in alternative #2 or #3 even when #1 is wrong. Also requires the
+  // proper 十/百/千 unit words so reading isolated digits doesn't count.
   function findMatchInAlternatives(resultItem, target){
+    const units = requiredUnitChars(target);
     let firstGuess = null;
+    let rightNumberWrongReading = false;
     for (let i = 0; i < resultItem.length; i++){
-      const g = extractNumberFromSpeech(resultItem[i].transcript);
+      const transcript = resultItem[i].transcript;
+      const g = extractNumberFromSpeech(transcript);
       if (i === 0) firstGuess = g;
-      if (g !== null && g === target) return { matched: true, guess: g };
+      if (g !== null && g === target){
+        if (units.length === 0 || hasRequiredUnits(transcript, units)){
+          return { matched: true, guess: g };
+        }
+        rightNumberWrongReading = true;
+      }
     }
-    return { matched: false, guess: firstGuess };
+    return { matched: false, guess: firstGuess, rightNumberWrongReading };
   }
 
   function markSpeakingCorrect(){
@@ -994,11 +1023,17 @@
     }, 700);
   }
 
-  function markSpeakingWrong(guess){
+  function markSpeakingWrong(guess, rightNumberWrongReading){
     wrongCount++;
     speakFeedback.className = 'feedback wrong';
-    const heard = guess !== null ? '(Escuché: ' + guess + ')' : '(No entendí, intenta de nuevo)';
-    speakFeedback.innerHTML = '<span class="stamp">✗</span><span class="msg">Incorrecto ' + heard + '</span>';
+    let msg;
+    if (rightNumberWrongReading){
+      msg = 'Ese número es correcto, pero dilo con "十/百/千" — no solo los dígitos sueltos';
+    } else {
+      const heard = guess !== null ? '(Escuché: ' + guess + ')' : '(No entendí, intenta de nuevo)';
+      msg = 'Incorrecto ' + heard;
+    }
+    speakFeedback.innerHTML = '<span class="stamp">✗</span><span class="msg">' + msg + '</span>';
   }
 
   if (recognition){
@@ -1024,9 +1059,9 @@
       }
 
       // standard mode: judge immediately using every alternative
-      const { matched, guess } = findMatchInAlternatives(lastResult, currentNumber);
+      const { matched, guess, rightNumberWrongReading } = findMatchInAlternatives(lastResult, currentNumber);
       if (matched) markSpeakingCorrect();
-      else markSpeakingWrong(guess);
+      else markSpeakingWrong(guess, rightNumberWrongReading);
     };
     recognition.onerror = (event) => {
       if (event.error === 'not-allowed' || event.error === 'service-not-allowed'){
@@ -1088,10 +1123,13 @@
       return;
     }
     const guess = extractNumberFromSpeech(pacedTranscript);
-    if (guess !== null && guess === currentNumber){
+    const units = requiredUnitChars(currentNumber);
+    const structurallyOk = units.length === 0 || hasRequiredUnits(pacedTranscript, units);
+    if (guess !== null && guess === currentNumber && structurallyOk){
       markSpeakingCorrect();
     } else {
-      markSpeakingWrong(guess);
+      const rightNumberWrongReading = guess === currentNumber && !structurallyOk;
+      markSpeakingWrong(guess, rightNumberWrongReading);
       pacedTranscript = '';
       // stay on the same question — restart listening so they can retry
       recognitionActive = false;
