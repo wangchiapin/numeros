@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
-<title>Números en Chino: Escucha y Habla</title>
+<title>Números en Chino: Escucha</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@500;700;900&family=Noto+Sans+TC:wght@400;500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -139,13 +139,12 @@
     margin:0 0 34px;
   }
   .modeCards{
-    display:grid;
-    grid-template-columns:1fr 1fr;
-    gap:18px;
+    display:flex;
+    justify-content:center;
     width:100%;
   }
-  @media (max-width:560px){ .modeCards{ grid-template-columns:1fr; } }
   .modeCard{
+    max-width:420px;
     text-align:left;
     background:var(--paper-2);
     border:1px solid var(--line);
@@ -178,13 +177,6 @@
     color:var(--ink-soft);
     line-height:1.6;
     margin:0;
-  }
-  .modeCard.disabled{ opacity:0.45; cursor:not-allowed; }
-  .modeCard.disabled:hover{ transform:none; border-color:var(--line); }
-  .warnNote{
-    font-size:12px;
-    color:var(--seal-dark);
-    margin-top:10px;
   }
   .modeNotice{
     font-size:12px;
@@ -253,20 +245,6 @@
   }
   #confirmBtn:hover{ background:var(--seal-dark); }
   #confirmBtn:active{ transform:translateY(1px); }
-
-  .bigNumber{
-    font-family:'Space Mono', monospace;
-    font-weight:700;
-    font-size:clamp(56px,16vw,96px);
-    letter-spacing:0.04em;
-    color:#1a1611;
-  }
-  .bigNumberHint{
-    text-align:center;
-    color:var(--ink-soft);
-    font-size:13px;
-    margin-top:6px;
-  }
 
   .feedback{
     min-height:46px;
@@ -340,86 +318,6 @@
     cursor:pointer;
   }
   #replayBtn:hover{ border-color:var(--gold); color:var(--ink); }
-
-  #speakModeSelector{
-    display:flex;
-    flex-wrap:wrap;
-    justify-content:center;
-    gap:8px;
-    padding:16px 20px 0;
-  }
-  .speakModeBtn{
-    background:none;
-    border:1px solid var(--line);
-    color:var(--ink-soft);
-    font-family:'Noto Sans TC',sans-serif;
-    font-size:13px;
-    padding:7px 16px;
-    border-radius:20px;
-    cursor:pointer;
-  }
-  .speakModeBtn:hover{ border-color:var(--gold); color:var(--ink); }
-  .speakModeBtn.active{
-    background:var(--ink);
-    border-color:var(--ink);
-    color:var(--paper);
-    font-weight:700;
-  }
-
-  #speakControls{
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    gap:12px;
-    padding-bottom:34px;
-  }
-  #micStatus{
-    font-family:'Noto Sans TC',sans-serif;
-    font-size:14px;
-    color:var(--ink-soft);
-    background:var(--paper-2);
-    border:1px solid var(--line);
-    padding:9px 18px;
-    border-radius:20px;
-    max-width:90%;
-    text-align:center;
-  }
-  #micStatus.listening{ color:var(--seal-dark); border-color:var(--seal); }
-  #speakConfirmBtn{
-    background:var(--seal);
-    color:#fff;
-    border:none;
-    font-family:'Noto Sans TC',sans-serif;
-    font-weight:700;
-    font-size:14px;
-    padding:10px 22px;
-    border-radius:20px;
-    cursor:pointer;
-  }
-  #speakConfirmBtn:hover{ background:var(--seal-dark); }
-  #speakRetryBtn{
-    background:none;
-    border:1px solid var(--ink);
-    color:var(--ink);
-    font-family:'Noto Sans TC',sans-serif;
-    font-weight:700;
-    font-size:14px;
-    padding:9px 21px;
-    border-radius:20px;
-    cursor:pointer;
-  }
-  #speakRetryBtn:hover{ border-color:var(--gold); color:var(--seal-dark); }
-  #giveUpBtn{
-    background:var(--ink);
-    color:var(--paper);
-    border:none;
-    font-family:'Noto Sans TC',sans-serif;
-    font-size:14px;
-    padding:10px 22px;
-    border-radius:20px;
-    cursor:pointer;
-  }
-  #giveUpBtn:hover{ background:var(--seal-dark); }
 
   /* ---------- Result ---------- */
   #resultScreen{
@@ -503,7 +401,7 @@
 <div id="app">
 
   <header id="topbar">
-    <div class="brand">Números en Chino: Escucha y Habla</div>
+    <div class="brand">Números en Chino: Escucha</div>
     <div id="timerWrap">
       <div id="timerBadge">01:00</div>
     </div>
@@ -523,13 +421,7 @@
           <h2>Modo Escucha</h2>
           <p>El sistema dirá un número en chino. Escribe el número que escuchaste y pulsa Enter (o el botón Confirmar). Pasarás a la siguiente pregunta sin importar si aciertas o no.</p>
         </button>
-        <button class="modeCard" id="startSpeaking" type="button">
-          <span class="modeNum">MODO 02</span>
-          <h2>Modo Habla</h2>
-          <p>Aparecerá un número en pantalla. Dilo en voz alta en chino y el sistema comprobará si es correcto. Solo avanzas si aciertas, o puedes rendirte y pasar al siguiente.</p>
-        </button>
       </div>
-      <div id="speechWarn" class="warnNote" style="display:none;">Este navegador no admite reconocimiento de voz, por lo que el Modo Habla no está disponible por ahora. Te recomendamos usar Chrome en computadora.</div>
     </section>
 
     <!-- Listening -->
@@ -549,28 +441,6 @@
       </div>
       <div id="listenFeedback" class="feedback"></div>
       <button id="replayBtn" type="button">🔊 Escuchar de nuevo</button>
-    </section>
-
-    <!-- Speaking -->
-    <section id="speakingScreen" class="screen">
-      <p class="modeNotice">ℹ️ El reconocimiento de voz del navegador tiene limitaciones y a veces puede fallar — si no funciona a la primera, inténtalo varias veces.</p>
-      <div id="speakModeSelector" role="group" aria-label="Modo de dificultad">
-        <button class="speakModeBtn" type="button" data-mode="paced">Principiante</button>
-        <button class="speakModeBtn active" type="button" data-mode="standard">Estándar</button>
-      </div>
-      <div class="numberStage">
-        <div class="numberCard">
-          <div id="speakNumber" class="bigNumber">0</div>
-          <div class="bigNumberHint">Di este número en voz alta en chino</div>
-        </div>
-      </div>
-      <div id="speakFeedback" class="feedback"></div>
-      <div id="speakControls">
-        <div id="micStatus">🎙️ Preparando micrófono…</div>
-        <button id="speakConfirmBtn" type="button" style="display:none;">✅ Ya terminé, confirmar</button>
-        <button id="speakRetryBtn" type="button" style="display:none;">🔄 Volver a intentar</button>
-        <button id="giveUpBtn" type="button">Rendirse, siguiente</button>
-      </div>
     </section>
 
     <!-- Result -->
@@ -657,26 +527,6 @@
     return chineseToNumber(filtered);
   }
 
-  // A speech-recognition engine will often normalize spoken digits into a
-  // plain numeral string (e.g. "225") whether the student said the proper
-  // reading "兩百二十五" OR just read out isolated digits "二二五". Matching
-  // only the final numeric value would silently accept the digit-by-digit
-  // shortcut, which defeats the purpose of practicing number pronunciation.
-  // So on top of the value match, we require that the unit words (十/百/千)
-  // the correct reading needs actually show up somewhere in the transcript.
-  function requiredUnitChars(target){
-    const canonical = numberToChinese(target);
-    const units = [];
-    if (canonical.includes('千')) units.push('千');
-    if (canonical.includes('百')) units.push('百');
-    if (canonical.includes('十')) units.push('十');
-    return units;
-  }
-
-  function hasRequiredUnits(transcript, units){
-    return units.every(u => transcript.includes(u));
-  }
-
   // 出題數字的位數機率：千位數 40%、百位數 45%、十位/個位數（0-99）20%
   const DIGIT_RANGES = [
     { min: 1000, max: 9999, weight: 40 },
@@ -727,24 +577,11 @@
     window.speechSynthesis.speak(utter);
   }
 
-  /* ============ Speech recognition (speaking mode) ============ */
-  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  let recognition = null;
-  let recognitionActive = false; // whether we *want* it running
-  if (SR){
-    recognition = new SR();
-    recognition.lang = 'zh-TW';
-    recognition.continuous = false;
-    recognition.interimResults = false;
-    recognition.maxAlternatives = 3;
-  }
-
   /* ============ Elements ============ */
   const el = id => document.getElementById(id);
   const screens = {
     menu: el('menuScreen'),
     listening: el('listeningScreen'),
-    speaking: el('speakingScreen'),
     result: el('resultScreen'),
   };
   const timerBadge = el('timerBadge');
@@ -757,20 +594,14 @@
     backBtn.style.visibility = (name === 'menu' || name === 'result') ? 'hidden' : 'visible';
   }
 
-  if (!SR){
-    el('speechWarn').style.display = 'block';
-    el('startSpeaking').classList.add('disabled');
-  }
-
   /* ============ Shared timer/session state ============ */
   const SESSION_SECONDS = 60;
   let timeLeft = SESSION_SECONDS;
   let timerInterval = null;
-  let currentMode = null; // 'listening' | 'speaking'
+  let currentMode = null; // 'listening'
   let currentNumber = 0;
   let correctCount = 0;
   let wrongCount = 0;
-  let giveUpCount = 0;
 
   function updateTimerUI(){
     const m = Math.floor(timeLeft / 60);
@@ -803,35 +634,21 @@
   function endSession(){
     stopTimer();
     if (window.speechSynthesis) window.speechSynthesis.cancel();
-    recognitionActive = false;
-    if (recognition){ try { recognition.stop(); } catch(e){} }
 
     el('resultTitle').textContent = '¡Se acabó el tiempo!';
     const stats = el('resultStats');
     const breakdown = el('speedBreakdown');
-    if (currentMode === 'listening'){
-      const total = correctCount + wrongCount;
-      stats.innerHTML =
-        statCard(correctCount, 'Correctas', 'correct') +
-        statCard(wrongCount, 'Incorrectas', 'wrong') +
-        statCard(total, 'Total', '');
-      breakdown.style.display = 'block';
-      breakdown.innerHTML = '<div class="speedBreakdownTitle">Correctas por velocidad</div>' +
-        SPEED_LABELS.map(s =>
-          '<div class="speedRow"><span>' + s.label + '</span><span>' + (speedCorrectCounts[s.rate] || 0) + '</span></div>'
-        ).join('');
-      trackEvent('game_complete', { mode: 'listening', correct: correctCount, wrong: wrongCount, total: total });
-    } else {
-      const total = correctCount + giveUpCount;
-      stats.innerHTML =
-        statCard(correctCount, 'Correctas', 'correct') +
-        statCard(wrongCount, 'Incorrectas', 'wrong') +
-        statCard(giveUpCount, 'Rendidas', 'wrong') +
-        statCard(total, 'Total', '');
-      breakdown.style.display = 'none';
-      breakdown.innerHTML = '';
-      trackEvent('game_complete', { mode: 'speaking', correct: correctCount, wrong: wrongCount, give_up: giveUpCount, total: total });
-    }
+    const total = correctCount + wrongCount;
+    stats.innerHTML =
+      statCard(correctCount, 'Correctas', 'correct') +
+      statCard(wrongCount, 'Incorrectas', 'wrong') +
+      statCard(total, 'Total', '');
+    breakdown.style.display = 'block';
+    breakdown.innerHTML = '<div class="speedBreakdownTitle">Correctas por velocidad</div>' +
+      SPEED_LABELS.map(s =>
+        '<div class="speedRow"><span>' + s.label + '</span><span>' + (speedCorrectCounts[s.rate] || 0) + '</span></div>'
+      ).join('');
+    trackEvent('game_complete', { mode: 'listening', correct: correctCount, wrong: wrongCount, total: total });
     showScreen('result');
   }
 
@@ -842,8 +659,6 @@
   function returnToMenu(){
     stopTimer();
     if (window.speechSynthesis) window.speechSynthesis.cancel();
-    recognitionActive = false;
-    if (recognition){ try { recognition.stop(); } catch(e){} }
     showScreen('menu');
   }
 
@@ -925,249 +740,16 @@
     listenInput.focus();
   });
 
-  /* ============ Speaking mode ============ */
-  const speakNumberEl = el('speakNumber');
-  const speakFeedback = el('speakFeedback');
-  const micStatus = el('micStatus');
-  const speakConfirmBtn = el('speakConfirmBtn');
-  const speakRetryBtn = el('speakRetryBtn');
-
-  let speakDifficulty = 'standard'; // 'standard' | 'paced'
-  let pacedTranscript = '';
-
-  function startSpeakingMode(){
-    if (!SR) return;
-    currentMode = 'speaking';
-    correctCount = 0; giveUpCount = 0; wrongCount = 0;
-    speakFeedback.className = 'feedback';
-    speakFeedback.innerHTML = '';
-    showScreen('speaking');
-    startTimer();
-    nextSpeakingNumber();
-  }
-
-  function nextSpeakingNumber(){
-    currentNumber = randomNumber(currentNumber);
-    speakNumberEl.textContent = currentNumber;
-    speakFeedback.className = 'feedback';
-    speakFeedback.innerHTML = '';
-    pacedTranscript = '';
-    startRecognitionLoop();
-  }
-
-  function configureRecognition(){
-    if (!recognition) return;
-    if (speakDifficulty === 'paced'){
-      recognition.continuous = true;
-      recognition.interimResults = true;
-    } else {
-      recognition.continuous = false;
-      recognition.interimResults = false;
-    }
-  }
-
-  function startRecognitionLoop(){
-    if (!recognition || timeLeft <= 0) return;
-    configureRecognition();
-    recognitionActive = true;
-    safeStartRecognition(0);
-  }
-
-  // The browser sometimes throws (or the mic isn't fully torn down yet) if we
-  // call start() immediately after a stop()/end(). Retry a few times with a
-  // short delay instead of silently giving up — this is what was causing
-  // Modo Pausado to stop listening after the first phrase (e.g. "五百") and
-  // never pick up the rest ("五十二").
-  function safeStartRecognition(delay, attempt){
-    attempt = attempt || 0;
-    setTimeout(() => {
-      if (!recognitionActive || currentMode !== 'speaking' || timeLeft <= 0) return;
-      try {
-        recognition.start();
-      } catch (e){
-        if (attempt < 5) safeStartRecognition(250, attempt + 1);
-      }
-    }, delay || 0);
-  }
-
-  // Check every alternative the engine offers (not just the top guess) — this
-  // helps a lot with tone/homophone slips, since the correct number is often
-  // hiding in alternative #2 or #3 even when #1 is wrong. Also requires the
-  // proper 十/百/千 unit words so reading isolated digits doesn't count.
-  function findMatchInAlternatives(resultItem, target){
-    const units = requiredUnitChars(target);
-    let firstGuess = null;
-    let rightNumberWrongReading = false;
-    for (let i = 0; i < resultItem.length; i++){
-      const transcript = resultItem[i].transcript;
-      const g = extractNumberFromSpeech(transcript);
-      if (i === 0) firstGuess = g;
-      if (g !== null && g === target){
-        if (units.length === 0 || hasRequiredUnits(transcript, units)){
-          return { matched: true, guess: g };
-        }
-        rightNumberWrongReading = true;
-      }
-    }
-    return { matched: false, guess: firstGuess, rightNumberWrongReading };
-  }
-
-  function markSpeakingCorrect(){
-    correctCount++;
-    speakFeedback.className = 'feedback correct';
-    speakFeedback.innerHTML = '<span class="stamp">✓</span><span class="msg">¡Correcto!</span>';
-    recognitionActive = false;
-    if (recognition){ try { recognition.stop(); } catch(e){} }
-    setTimeout(() => {
-      if (currentMode === 'speaking' && timeLeft > 0) nextSpeakingNumber();
-    }, 700);
-  }
-
-  function markSpeakingWrong(guess, rightNumberWrongReading){
-    wrongCount++;
-    speakFeedback.className = 'feedback wrong';
-    let msg;
-    if (rightNumberWrongReading){
-      msg = 'Ese número es correcto, pero dilo con "十/百/千" — no solo los dígitos sueltos';
-    } else {
-      const heard = guess !== null ? '(Escuché: ' + guess + ')' : '(No entendí, intenta de nuevo)';
-      msg = 'Incorrecto ' + heard;
-    }
-    speakFeedback.innerHTML = '<span class="stamp">✗</span><span class="msg">' + msg + '</span>';
-  }
-
-  if (recognition){
-    recognition.onstart = () => {
-      micStatus.classList.add('listening');
-      micStatus.textContent = speakDifficulty === 'paced'
-        ? '🎙️ Escuchando… habla con calma'
-        : '🎙️ Escuchando, di el número…';
-    };
-    recognition.onresult = (event) => {
-      const lastResult = event.results[event.results.length - 1];
-
-      if (speakDifficulty === 'paced'){
-        if (!lastResult.isFinal){
-          micStatus.textContent = '🎙️ Escuchando: ' + pacedTranscript + lastResult[0].transcript;
-          return; // still talking — don't judge yet
-        }
-        // a final chunk arrived: keep accumulating, but wait for the
-        // student to press "Ya terminé" before judging anything
-        pacedTranscript += lastResult[0].transcript;
-        micStatus.textContent = '✏️ Escuché: "' + pacedTranscript + '" — pulsa "Ya terminé" cuando acabes';
-        return;
-      }
-
-      // standard mode: judge immediately using every alternative
-      const { matched, guess, rightNumberWrongReading } = findMatchInAlternatives(lastResult, currentNumber);
-      if (matched) markSpeakingCorrect();
-      else markSpeakingWrong(guess, rightNumberWrongReading);
-    };
-    recognition.onerror = (event) => {
-      if (event.error === 'not-allowed' || event.error === 'service-not-allowed'){
-        micStatus.textContent = '⚠️ Permiso de micrófono denegado. Por favor, permite el acceso al micrófono';
-        recognitionActive = false;
-      }
-      // other errors (no-speech, aborted) are handled by onend restart logic
-    };
-    recognition.onend = () => {
-      micStatus.classList.remove('listening');
-      if (speakDifficulty !== 'paced'){
-        micStatus.textContent = '🎙️ Preparando micrófono…';
-      }
-      // Modo Pausado uses continuous listening, but some browsers still end
-      // the session after each pause — always try to resume automatically
-      // so the student's next words in the same answer aren't lost.
-      if (recognitionActive && currentMode === 'speaking' && timeLeft > 0 && screens.speaking.classList.contains('active')){
-        safeStartRecognition(200);
-      }
-    };
-  }
-
-  document.querySelectorAll('.speakModeBtn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.speakModeBtn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      speakDifficulty = btn.dataset.mode;
-      speakConfirmBtn.style.display = speakDifficulty === 'paced' ? 'inline-block' : 'none';
-      speakRetryBtn.style.display = speakDifficulty === 'paced' ? 'inline-block' : 'none';
-      trackEvent('select_speak_difficulty', { mode: speakDifficulty });
-      if (currentMode === 'speaking' && timeLeft > 0){
-        // reconfigure the live recognition session for the new mode
-        recognitionActive = false;
-        pacedTranscript = '';
-        if (recognition){ try { recognition.stop(); } catch(e){} }
-        configureRecognition();
-        recognitionActive = true;
-        safeStartRecognition(150);
-      }
-    });
-  });
-
-  speakRetryBtn.addEventListener('click', () => {
-    if (currentMode !== 'speaking' || timeLeft <= 0) return;
-    pacedTranscript = '';
-    speakFeedback.className = 'feedback';
-    speakFeedback.innerHTML = '';
-    recognitionActive = false;
-    if (recognition){ try { recognition.stop(); } catch(e){} }
-    micStatus.textContent = '🎙️ Escuchando de nuevo, empieza cuando quieras…';
-    recognitionActive = true;
-    safeStartRecognition(300);
-  });
-
-  speakConfirmBtn.addEventListener('click', () => {
-    if (currentMode !== 'speaking' || timeLeft <= 0) return;
-    if (!pacedTranscript.trim()){
-      micStatus.textContent = '🎙️ Todavía no escuché nada, intenta de nuevo…';
-      return;
-    }
-    const guess = extractNumberFromSpeech(pacedTranscript);
-    const units = requiredUnitChars(currentNumber);
-    const structurallyOk = units.length === 0 || hasRequiredUnits(pacedTranscript, units);
-    if (guess !== null && guess === currentNumber && structurallyOk){
-      markSpeakingCorrect();
-    } else {
-      const rightNumberWrongReading = guess === currentNumber && !structurallyOk;
-      markSpeakingWrong(guess, rightNumberWrongReading);
-      pacedTranscript = '';
-      // stay on the same question — restart listening so they can retry
-      recognitionActive = false;
-      if (recognition){ try { recognition.stop(); } catch(e){} }
-      recognitionActive = true;
-      safeStartRecognition(400);
-    }
-  });
-
-  el('giveUpBtn').addEventListener('click', () => {
-    if (currentMode !== 'speaking' || timeLeft <= 0) return;
-    giveUpCount++;
-    trackEvent('give_up', { mode: 'speaking', number: currentNumber });
-    speakFeedback.className = 'feedback wrong';
-    speakFeedback.innerHTML = '<span class="stamp">✗</span><span class="msg">Te rendiste · La respuesta correcta era ' + numberToChinese(currentNumber) + '</span>';
-    recognitionActive = false;
-    if (recognition){ try { recognition.stop(); } catch(e){} }
-    setTimeout(() => {
-      if (currentMode === 'speaking' && timeLeft > 0) nextSpeakingNumber();
-    }, 700);
-  });
-
   /* ============ Nav ============ */
   el('startListening').addEventListener('click', () => {
     trackEvent('select_mode', { mode: 'listening' });
     startListeningMode();
   });
-  el('startSpeaking').addEventListener('click', () => {
-    if (!SR) return;
-    trackEvent('select_mode', { mode: 'speaking' });
-    startSpeakingMode();
-  });
   backBtn.addEventListener('click', returnToMenu);
   el('menuBtn').addEventListener('click', returnToMenu);
   el('retryBtn').addEventListener('click', () => {
     trackEvent('replay_game', { mode: currentMode });
-    if (currentMode === 'listening') startListeningMode();
-    else if (currentMode === 'speaking') startSpeakingMode();
+    startListeningMode();
   });
 
   trackEvent('enter_main_menu');
