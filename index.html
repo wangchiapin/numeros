@@ -629,6 +629,9 @@
 
   function stopTimer(){
     clearInterval(timerInterval);
+    // 取消「0.8 秒後出下一題」的等待，避免結束後還唸出數字
+    clearTimeout(listenAdvanceTimeout);
+    answerLocked = false;
   }
 
   function endSession(){
@@ -666,6 +669,7 @@
   const listenInput = el('listenInput');
   const listenFeedback = el('listenFeedback');
   let listenAdvanceTimeout = null;
+  let answerLocked = false; // 顯示 ✓/✗ 的那 0.8 秒內不接受重複作答
 
   const SPEED_LABELS = [
     { rate: 0.1, label: 'Súper Fácil' },
@@ -689,6 +693,9 @@
 
   function nextListeningNumber(){
     clearTimeout(listenAdvanceTimeout);
+    answerLocked = false;
+    // 時間到或已離開練習畫面，就不要再出題
+    if (timeLeft <= 0 || !screens.listening.classList.contains('active')) return;
     currentNumber = randomNumber(currentNumber);
     listenInput.value = '';
     listenFeedback.className = 'feedback';
@@ -699,13 +706,14 @@
   }
 
   function submitListeningAnswer(){
-    if (timeLeft <= 0) return;
+    if (timeLeft <= 0 || answerLocked) return;
     const raw = listenInput.value.trim();
     if (raw === '') return;
     const guess = parseInt(raw, 10);
     if (Number.isNaN(guess)) return;
 
-    listenInput.blur();
+    // 不再 blur：手機上鍵盤收起來後，程式沒辦法自己再叫出來
+    answerLocked = true;
     if (guess === currentNumber){
       correctCount++;
       speedCorrectCounts[currentQuestionRate] = (speedCorrectCounts[currentQuestionRate] || 0) + 1;
@@ -724,6 +732,11 @@
     submitListeningAnswer();
   });
   el('confirmBtn').addEventListener('click', submitListeningAnswer);
+
+  // 點「確認」「再聽一次」「速度」按鈕時，不要把焦點從輸入框搶走（手機鍵盤才不會收起來）
+  document.querySelectorAll('#confirmBtn, #replayBtn, .speedBtn').forEach(btn => {
+    btn.addEventListener('mousedown', e => e.preventDefault());
+  });
 
   document.querySelectorAll('.speedBtn').forEach(btn => {
     btn.addEventListener('click', () => {
