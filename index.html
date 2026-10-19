@@ -186,6 +186,45 @@
     line-height:1.5;
   }
 
+  /* 答錯時的訂正：中文 + 拼音 */
+  .feedback.withCorrection{ flex-direction:column; gap:6px; padding:6px 20px 2px; }
+  .fbRow{ display:flex; align-items:center; justify-content:center; gap:10px; }
+  .fbRow .msg{ text-align:center; }
+  .fbRow .stamp{ flex-shrink:0; }
+  .feedback.withCorrection{ margin-bottom:10px; }
+  .correction{ display:flex; flex-direction:column; align-items:center; gap:2px; }
+  .corrHanzi{ font-family:'Noto Serif TC', serif; font-weight:700; font-size:26px; color:var(--ink); letter-spacing:0.08em; }
+  .corrPinyin{ font-size:14px; color:var(--ink-soft); letter-spacing:0.02em; }
+
+  /* 結果頁：答錯的數字 */
+  .wrongBreakdown{
+    display:none;
+    width:100%;
+    max-width:380px;
+    margin:0 auto 30px;
+    background:var(--paper-2);
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:14px 20px;
+    text-align:left;
+  }
+  .wrongRow{ display:flex; align-items:baseline; gap:14px; padding:6px 0; border-bottom:1px dashed var(--line); }
+  .wrongRow:last-of-type{ border-bottom:none; }
+  .wrongNum{ font-family:'Space Mono', monospace; font-weight:700; font-size:16px; min-width:52px; }
+  .wrongText{ display:flex; flex-direction:column; min-width:0; }
+  .wrongCn{ font-family:'Noto Serif TC', serif; font-weight:700; font-size:17px; }
+  .wrongPy{ font-size:12px; color:var(--ink-soft); }
+  .wrongMore{ font-size:12px; color:var(--ink-soft); text-align:center; margin-top:6px; }
+
+  .voiceNotice{
+    background:#fbe9c9;
+    border:1px solid var(--gold);
+    border-radius:6px;
+    padding:8px 12px;
+    color:#5a4300;
+  }
+  .voiceNotice[hidden]{ display:none; }
+
   /* ---------- Number stage (shared) ---------- */
   .numberStage{
     flex:1;
@@ -427,6 +466,7 @@
     <!-- Listening -->
     <section id="listeningScreen" class="screen">
       <p class="modeNotice">ℹ️ La voz la genera el navegador (síntesis de voz), así que a veces puede sonar un poco robótica o rara.</p>
+      <p class="modeNotice voiceNotice" id="voiceNotice" role="status" hidden>⚠️ No encontramos una voz en chino en tu dispositivo. Si no oyes sonido, instala una voz en chino en los ajustes de tu teléfono o computadora (Accesibilidad / Voz) y vuelve a abrir la página.</p>
       <div id="speedSelector" role="group" aria-label="Selección de velocidad">
         <button class="speedBtn" type="button" data-rate="0.1">Súper Fácil</button>
         <button class="speedBtn" type="button" data-rate="0.6">Lento</button>
@@ -448,6 +488,7 @@
       <h2 id="resultTitle">¡Se acabó el tiempo!</h2>
       <div class="resultStats" id="resultStats"></div>
       <div class="speedBreakdown" id="speedBreakdown"></div>
+      <div class="wrongBreakdown" id="wrongBreakdown"></div>
       <div class="resultActions">
         <button id="retryBtn" type="button">Jugar de nuevo</button>
         <button id="menuBtn" type="button">Volver al menú</button>
@@ -497,37 +538,16 @@
     return result;
   }
 
-  function chineseToNumber(str){
-    const digitMap = {'零':0,'一':1,'二':2,'兩':2,'两':2,'三':3,'四':4,'五':5,'六':6,'七':7,'八':8,'九':9};
-    const unitMap = {'十':10,'百':100,'千':1000};
-    let section = 0, num = 0, any = false;
-    for (const ch of str){
-      if (digitMap[ch] !== undefined){
-        num = digitMap[ch];
-        any = true;
-      } else if (unitMap[ch] !== undefined){
-        const unit = unitMap[ch];
-        if (num === 0) num = 1; // "十" alone means 10
-        section += num * unit;
-        num = 0;
-        any = true;
-      }
-    }
-    if (!any) return null;
-    return section + num;
+  // 台灣讀音的拼音（答錯時顯示用）。數字字元沿用上面 numberToChinese 的結果逐字轉換。
+  const CN_PINYIN = {
+    '零':'líng','一':'yī','二':'èr','兩':'liǎng','三':'sān','四':'sì','五':'wǔ',
+    '六':'liù','七':'qī','八':'bā','九':'jiǔ','十':'shí','百':'bǎi','千':'qiān'
+  };
+  function numberToPinyin(n){
+    return [...numberToChinese(n)].map(ch => CN_PINYIN[ch] || ch).join(' ');
   }
 
-  function extractNumberFromSpeech(transcript){
-    if (!transcript) return null;
-    const digitMatch = transcript.match(/\d+/);
-    if (digitMatch) return parseInt(digitMatch[0], 10);
-    const allowed = '零一二三四五六七八九兩两十百千';
-    const filtered = [...transcript].filter(ch => allowed.includes(ch)).join('');
-    if (!filtered) return null;
-    return chineseToNumber(filtered);
-  }
-
-  // 出題數字的位數機率：千位數 40%、百位數 45%、十位/個位數（0-99）20%
+  // 出題數字的位數權重（相對比例）：千位數 40 : 百位數 45 : 十位/個位數（0-99）20
   const DIGIT_RANGES = [
     { min: 1000, max: 9999, weight: 40 },
     { min: 100, max: 999, weight: 45 },
@@ -562,10 +582,24 @@
       || voices.find(v => v.lang && v.lang.toLowerCase().startsWith('zh'))
       || null;
   }
+  // 找不到中文語音、或唸的時候出錯時，在畫面上方提示一行（聽得到聲音的人不會看到）
+  let voiceFailed = false;
+  function updateVoiceNotice(){
+    const notice = document.getElementById('voiceNotice');
+    if (!notice) return;
+    const noSynth = !window.speechSynthesis;
+    notice.hidden = !(noSynth || voiceFailed || !zhVoice);
+    if (noSynth) {
+      notice.textContent = '⚠️ Tu navegador no puede reproducir voz. Prueba con Chrome o Safari actualizado.';
+    }
+  }
+  function pickAndCheckVoice(){ pickVoice(); updateVoiceNotice(); }
   if (window.speechSynthesis){
     pickVoice();
-    window.speechSynthesis.onvoiceschanged = pickVoice;
+    window.speechSynthesis.onvoiceschanged = pickAndCheckVoice;
   }
+  // 語音清單常常晚一點才載入，等一下再判斷，避免一開始誤報
+  setTimeout(updateVoiceNotice, 2000);
   let speechRate = 1.0; // Súper Fácil 0.1 · Lento 0.6 · Normal 1.0 · Rápido 1.6
   function speak(text){
     if (!window.speechSynthesis) return;
@@ -574,6 +608,13 @@
     utter.lang = 'zh-TW';
     if (zhVoice) utter.voice = zhVoice;
     utter.rate = speechRate;
+    utter.onerror = (e) => {
+      // 自己呼叫 cancel() 換下一題時也會觸發錯誤，那不算失敗
+      if (e && (e.error === 'canceled' || e.error === 'interrupted')) return;
+      voiceFailed = true;
+      updateVoiceNotice();
+    };
+    utter.onstart = () => { if (voiceFailed){ voiceFailed = false; updateVoiceNotice(); } };
     window.speechSynthesis.speak(utter);
   }
 
@@ -632,6 +673,8 @@
     // 取消「0.8 秒後出下一題」的等待，避免結束後還唸出數字
     clearTimeout(listenAdvanceTimeout);
     answerLocked = false;
+    awaitingNext = false;
+    setConfirmLabel(false);
   }
 
   function endSession(){
@@ -651,8 +694,32 @@
       SPEED_LABELS.map(s =>
         '<div class="speedRow"><span>' + s.label + '</span><span>' + (speedCorrectCounts[s.rate] || 0) + '</span></div>'
       ).join('');
+    renderWrongList();
     trackEvent('game_complete', { mode: 'listening', correct: correctCount, wrong: wrongCount, total: total });
     showScreen('result');
+  }
+
+  // 結果頁：這次答錯的數字（重複的只列一次，最多 10 個），附中文和拼音方便複習
+  const WRONG_LIST_MAX = 10;
+  function renderWrongList(){
+    const box = el('wrongBreakdown');
+    const unique = [...new Set(wrongNumbers)];
+    if (unique.length === 0){
+      box.style.display = 'none';
+      box.innerHTML = '';
+      return;
+    }
+    const shown = unique.slice(0, WRONG_LIST_MAX);
+    box.innerHTML = '<div class="speedBreakdownTitle">Números que fallaste</div>' +
+      shown.map(n =>
+        '<div class="wrongRow"><span class="wrongNum">' + n + '</span>' +
+        '<span class="wrongText"><span class="wrongCn">' + numberToChinese(n) + '</span>' +
+        '<span class="wrongPy">' + numberToPinyin(n) + '</span></span></div>'
+      ).join('') +
+      (unique.length > shown.length
+        ? '<div class="wrongMore">y ' + (unique.length - shown.length) + ' más</div>'
+        : '');
+    box.style.display = 'block';
   }
 
   function statCard(num, label, cls){
@@ -670,6 +737,11 @@
   const listenFeedback = el('listenFeedback');
   let listenAdvanceTimeout = null;
   let answerLocked = false; // 顯示 ✓/✗ 的那 0.8 秒內不接受重複作答
+  let awaitingNext = false; // 答錯後停在訂正畫面，等學生按「Siguiente」
+  let correctionShownAt = 0;
+  let wrongNumbers = [];
+  const confirmBtn = el('confirmBtn');
+  function setConfirmLabel(next){ confirmBtn.textContent = next ? 'Siguiente' : 'Confirmar'; }
 
   const SPEED_LABELS = [
     { rate: 0.1, label: 'Súper Fácil' },
@@ -684,6 +756,9 @@
     currentMode = 'listening';
     correctCount = 0; wrongCount = 0;
     speedCorrectCounts = {};
+    wrongNumbers = [];
+    awaitingNext = false;
+    setConfirmLabel(false);
     listenFeedback.className = 'feedback';
     listenFeedback.innerHTML = '';
     showScreen('listening');
@@ -694,6 +769,8 @@
   function nextListeningNumber(){
     clearTimeout(listenAdvanceTimeout);
     answerLocked = false;
+    awaitingNext = false;
+    setConfirmLabel(false);
     // 時間到或已離開練習畫面，就不要再出題
     if (timeLeft <= 0 || !screens.listening.classList.contains('active')) return;
     currentNumber = randomNumber(currentNumber);
@@ -706,7 +783,14 @@
   }
 
   function submitListeningAnswer(){
-    if (timeLeft <= 0 || answerLocked) return;
+    if (timeLeft <= 0) return;
+    if (awaitingNext){
+      // 剛顯示訂正的 0.4 秒內先不跳題，避免連按兩下 Enter 就跳過了
+      if (Date.now() - correctionShownAt < 400) return;
+      nextListeningNumber();
+      return;
+    }
+    if (answerLocked) return;
     const raw = listenInput.value.trim();
     if (raw === '') return;
     const guess = parseInt(raw, 10);
@@ -721,8 +805,20 @@
       listenFeedback.innerHTML = '<span class="stamp">✓</span><span class="msg">¡Correcto!</span>';
     } else {
       wrongCount++;
-      listenFeedback.className = 'feedback wrong';
-      listenFeedback.innerHTML = '<span class="stamp">✗</span><span class="msg">Incorrecto · La respuesta correcta es ' + currentNumber + '</span>';
+      wrongNumbers.push(currentNumber);
+      // 答錯：停在這裡顯示中文和拼音，再唸一次標準讀法；倒數計時照常跑，由學生按「Siguiente」才換下一題
+      listenFeedback.className = 'feedback wrong withCorrection';
+      listenFeedback.innerHTML =
+        '<div class="fbRow"><span class="stamp">✗</span><span class="msg">Incorrecto · La respuesta correcta es ' + currentNumber + '</span></div>' +
+        '<div class="correction"><span class="corrHanzi">' + numberToChinese(currentNumber) + '</span>' +
+        '<span class="corrPinyin">' + numberToPinyin(currentNumber) + '</span></div>';
+      awaitingNext = true;
+      correctionShownAt = Date.now();
+      setConfirmLabel(true);
+      // 收起鍵盤，訂正的中文和拼音才不會被鍵盤蓋住；按「Siguiente」時會再叫出來
+      listenInput.blur();
+      speak(numberToChinese(currentNumber));
+      return;
     }
     listenAdvanceTimeout = setTimeout(nextListeningNumber, 800);
   }
@@ -732,6 +828,13 @@
     submitListeningAnswer();
   });
   el('confirmBtn').addEventListener('click', submitListeningAnswer);
+  // 鍵盤收起後輸入框沒有焦點，電腦上按 Enter 一樣要能換下一題
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && awaitingNext && screens.listening.classList.contains('active')){
+      e.preventDefault();
+      submitListeningAnswer();
+    }
+  });
 
   // 點「確認」「再聽一次」「速度」按鈕時，不要把焦點從輸入框搶走（手機鍵盤才不會收起來）
   document.querySelectorAll('#confirmBtn, #replayBtn, .speedBtn').forEach(btn => {
@@ -750,7 +853,7 @@
   el('replayBtn').addEventListener('click', () => {
     currentQuestionRate = speechRate;
     speak(numberToChinese(currentNumber));
-    listenInput.focus();
+    if (!awaitingNext) listenInput.focus();
   });
 
   /* ============ Nav ============ */
