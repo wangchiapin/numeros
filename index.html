@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="zh-Hant">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
@@ -434,17 +434,39 @@
   #retryBtn{ background:var(--ink); color:var(--paper); }
   #retryBtn:hover{ background:var(--seal-dark); border-color:var(--seal-dark); }
   #menuBtn:hover{ border-color:var(--gold); color:var(--ink); }
+
+  /* ---------- ⚙️ 設定（和小狗找寶藏一樣） ---------- */
+  .topRight{display:flex;align-items:center;gap:8px;}
+  .gear{width:36px;height:36px;padding:0;border-radius:999px;cursor:pointer;border:1.5px solid var(--gold);background:var(--paper-2);color:var(--ink);font-size:18px;line-height:1;display:flex;align-items:center;justify-content:center;}
+  .ov{position:fixed;inset:0;z-index:1200;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(46,36,28,.55);overflow-y:auto;}
+  .ov.hide{display:none;}
+  .ovCard{width:100%;max-width:380px;margin:auto;background:var(--paper);border:2px solid var(--gold);border-radius:20px;padding:18px 16px;text-align:center;}
+  .ovCard h2{margin:0 0 10px;color:var(--seal-dark);font-family:'Noto Serif TC',serif;font-size:20px;}
+  .setGroup{margin:12px 0;text-align:left;}
+  .setGroup h3{font-size:13px;margin:0 0 6px;color:var(--seal-dark);}
+  .setGroup h3 small{font-size:11px;font-weight:400;color:var(--ink-soft);}
+  .setGroup h3 small::before{content:" · ";}
+  .opts{display:flex;flex-wrap:wrap;gap:6px;}
+  .opt{flex:1 1 0;min-width:0;padding:7px 8px;border-radius:999px;border:1.5px solid var(--gold);background:#fff;color:var(--ink);font-family:inherit;font-size:14px;cursor:pointer;line-height:1.25;}
+  .opt small{display:block;font-size:10.5px;opacity:.8;}
+  .opts.two .opt{flex:1 1 40%;}
+  .opt.on{background:var(--gold);color:#2E241C;font-weight:700;}
+  #setDone{margin-top:6px;padding:10px 26px;border-radius:999px;border:0;background:var(--ink);color:#fff;font-size:15px;cursor:pointer;}
+  .corrPinyin.zy{letter-spacing:.06em;}
+  .tr{font-size:.82em;opacity:.8;}
+  .wrongPy + .wrongPy{display:block;}
 </style>
 </head>
 <body>
+<div id="setov" class="ov hide"></div>
 <div id="app">
 
   <header id="topbar">
-    <div class="brand">Números en Chino: Escucha</div>
+    <div class="brand" data-t="brand"></div>
     <div id="timerWrap">
       <div id="timerBadge">01:00</div>
     </div>
-    <button id="backBtn">Volver al menú</button>
+    <div class="topRight"><button type="button" class="gear" id="gearBtn" aria-label="⚙️">⚙️</button><button id="backBtn" data-t="back"></button></div>
     <div id="timerTrack"><div id="timerFill"></div></div>
   </header>
 
@@ -452,46 +474,45 @@
 
     <!-- Menu -->
     <section id="menuScreen" class="screen active">
-      <h1>Práctica Rápida de Números en Chino</h1>
-      <p class="sub">Cada ronda dura 1 minuto · Números del 0 al 9999</p>
+      <h1 data-t="h1"></h1>
+      <p class="sub" data-t="sub"></p>
       <div class="modeCards">
         <button class="modeCard" id="startListening" type="button">
-          <span class="modeNum">MODO 01</span>
-          <h2>Modo Escucha</h2>
-          <p>El sistema dirá un número en chino. Escribe el número que escuchaste y pulsa Enter (o el botón Confirmar). Pasarás a la siguiente pregunta sin importar si aciertas o no.</p>
+          <span class="modeNum" data-t="mode1"></span>
+          <h2 data-t="modeName"></h2>
+          <p data-t="modeDesc"></p>
         </button>
       </div>
     </section>
 
     <!-- Listening -->
     <section id="listeningScreen" class="screen">
-      <p class="modeNotice">ℹ️ La voz la genera el navegador (síntesis de voz), así que a veces puede sonar un poco robótica o rara.</p>
-      <p class="modeNotice voiceNotice" id="voiceNotice" role="status" hidden>⚠️ No encontramos una voz en chino en tu dispositivo. Si no oyes sonido, instala una voz en chino en los ajustes de tu teléfono o computadora (Accesibilidad / Voz) y vuelve a abrir la página.</p>
-      <div id="speedSelector" role="group" aria-label="Selección de velocidad">
-        <button class="speedBtn" type="button" data-rate="0.1">Súper Fácil</button>
-        <button class="speedBtn" type="button" data-rate="0.6">Lento</button>
-        <button class="speedBtn active" type="button" data-rate="1.0">Normal</button>
-        <button class="speedBtn" type="button" data-rate="1.6">Rápido</button>
+      <p class="modeNotice" data-t="synthNote"></p>
+      <p class="modeNotice voiceNotice" id="voiceNotice" role="status" hidden data-t="noVoice"></p>
+      <div id="speedSelector" role="group" aria-label="語速">
+        <button class="speedBtn" type="button" data-rate="slow" data-t="slow"></button>
+        <button class="speedBtn" type="button" data-rate="normal" data-t="normal"></button>
+        <button class="speedBtn" type="button" data-rate="fast" data-t="fast"></button>
       </div>
       <div class="numberStage">
         <div class="numberCard">
-          <input id="listenInput" type="text" inputmode="numeric" autocomplete="off" placeholder="Escribe el número que escuchaste">
-          <button id="confirmBtn" type="button">Confirmar</button>
+          <input id="listenInput" type="text" inputmode="numeric" autocomplete="off" data-tp="ph">
+          <button id="confirmBtn" type="button"></button>
         </div>
       </div>
       <div id="listenFeedback" class="feedback"></div>
-      <button id="replayBtn" type="button">🔊 Escuchar de nuevo</button>
+      <button id="replayBtn" type="button" data-t="replay"></button>
     </section>
 
     <!-- Result -->
     <section id="resultScreen" class="screen">
-      <h2 id="resultTitle">¡Se acabó el tiempo!</h2>
+      <h2 id="resultTitle" data-t="timeUp"></h2>
       <div class="resultStats" id="resultStats"></div>
       <div class="speedBreakdown" id="speedBreakdown"></div>
       <div class="wrongBreakdown" id="wrongBreakdown"></div>
       <div class="resultActions">
-        <button id="retryBtn" type="button">Jugar de nuevo</button>
-        <button id="menuBtn" type="button">Volver al menú</button>
+        <button id="retryBtn" type="button" data-t="again"></button>
+        <button id="menuBtn" type="button" data-t="back"></button>
       </div>
     </section>
 
@@ -508,6 +529,156 @@
       gtag('event', name, params || {});
     }
   }
+
+
+  /* ============ 共用設定（和小狗找寶藏同一份 hanziGames.settings） ============ */
+  const SETTINGS_KEY = 'hanziGames.settings';
+  const SET_OPTS = { script:['trad','simp'], lang:['es','en','zh'], phon:['pinyin','zhuyin','both','off'], rate:['slow','normal','fast'] };
+  const RATE_VALUE = { slow:0.45, normal:0.65, fast:0.85 };
+  function writeSettings(o){
+    try{
+      let cur = {};
+      try{ cur = JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}') || {}; }catch(e){}
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify(Object.assign(cur, { v:1, script:o.script, lang:o.lang, phon:o.phon, rate:o.rate })));
+    }catch(e){}
+  }
+  function readSettings(){
+    const out = { v:1, script:'trad', lang:'es', phon:'pinyin', rate:'normal' };
+    let saved = null;
+    try{ saved = JSON.parse(localStorage.getItem(SETTINGS_KEY) || 'null'); }catch(e){}
+    if (saved && typeof saved === 'object'){
+      Object.keys(SET_OPTS).forEach(k => { if (SET_OPTS[k].includes(saved[k])) out[k] = saved[k]; });
+    } else writeSettings(out);
+    return out;
+  }
+  const Settings = readSettings();
+  const saveSettings = () => writeSettings(Settings);
+  const SIMP = () => Settings.script === 'simp';
+  const ONLYZH = () => Settings.lang === 'zh';
+  const esc = x => String(x).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  let _t2s = null;
+  const Z = x => (SIMP() && _t2s) ? _t2s(String(x)) : String(x);
+  function loadT2S(){
+    if (_t2s) return Promise.resolve();
+    return new Promise(res => {
+      const sc = document.createElement('script');
+      sc.src = 'https://cdn.jsdelivr.net/npm/opencc-js@1.4.2/dist/umd/t2cn.js';
+      sc.onload = () => { try { _t2s = OpenCC.Converter({ from: 'tw', to: 'cn' }); } catch (e) {} res(); };
+      sc.onerror = () => res();
+      document.head.appendChild(sc);
+    });
+  }
+  /* 拼音 → 注音 */
+  const ZY=(function(){
+  var INI={b:'ㄅ',p:'ㄆ',m:'ㄇ',f:'ㄈ',d:'ㄉ',t:'ㄊ',n:'ㄋ',l:'ㄌ',g:'ㄍ',k:'ㄎ',h:'ㄏ',j:'ㄐ',q:'ㄑ',x:'ㄒ',zh:'ㄓ',ch:'ㄔ',sh:'ㄕ',r:'ㄖ',z:'ㄗ',c:'ㄘ',s:'ㄙ'};
+  var FIN={a:'ㄚ',o:'ㄛ',e:'ㄜ',ê:'ㄝ',ai:'ㄞ',ei:'ㄟ',ao:'ㄠ',ou:'ㄡ',an:'ㄢ',en:'ㄣ',ang:'ㄤ',eng:'ㄥ',er:'ㄦ',
+    i:'ㄧ',ia:'ㄧㄚ',io:'ㄧㄛ',ie:'ㄧㄝ',iao:'ㄧㄠ',iu:'ㄧㄡ',iou:'ㄧㄡ',ian:'ㄧㄢ',in:'ㄧㄣ',iang:'ㄧㄤ',ing:'ㄧㄥ',
+    u:'ㄨ',ua:'ㄨㄚ',uo:'ㄨㄛ',uai:'ㄨㄞ',ui:'ㄨㄟ',uei:'ㄨㄟ',uan:'ㄨㄢ',un:'ㄨㄣ',uen:'ㄨㄣ',uang:'ㄨㄤ',ong:'ㄨㄥ',ueng:'ㄨㄥ',
+    v:'ㄩ',ve:'ㄩㄝ',van:'ㄩㄢ',vn:'ㄩㄣ',iong:'ㄩㄥ'};
+  var MARK=['','','ˊ','ˇ','ˋ'];
+  function one(syl){
+    var s=syl.normalize('NFD'),tone=5;
+    if(/̄/.test(s))tone=1;else if(/́/.test(s))tone=2;else if(/̌/.test(s))tone=3;else if(/̀/.test(s))tone=4;
+    s=s.replace(/ü/g,'v').replace(/ü/g,'v').replace(/Ü/g,'v').replace(/[̀-ͯ]/g,'').toLowerCase();
+    if(!/^[a-zê]+$/.test(s))return syl;
+    var ini='',rest=s,m;
+    if(s==='n'||s==='m'){var zz=s==='n'?'ㄣ':'ㄇㄨ';return tone===5?'˙'+zz:zz+MARK[tone];}
+    if(s==='er'||s==='r'){rest='er';}
+    else if((m=s.match(/^(zh|ch|sh|[bpmfdtnlgkhjqxrzcs])/))){ini=m[1];rest=s.slice(ini.length);}
+    else if(s[0]==='y'){rest=s.slice(1);if(/^u/.test(rest))rest=rest.replace(/^u/,'v');else if(!(rest==='i'||rest==='in'||rest==='ing'))rest='i'+rest;}
+    else if(s[0]==='w'){rest=s.slice(1);rest=(rest==='u')?'u':'u'+rest;}
+    if(ini&&/^[jqx]$/.test(ini))rest=rest.replace(/^u/,'v');
+    if(/^(zh|ch|sh|r|z|c|s)$/.test(ini)&&rest==='i')rest='';
+    var f=rest===''?'':FIN[rest];
+    if(f===undefined)return syl;
+    var z=(ini?INI[ini]:'')+f;
+    return tone===5?'˙'+z:z+MARK[tone];
+  }
+  function conv(py){return String(py||'').trim().split(/\s+/).filter(Boolean).map(one).join(' ');}
+  return {one:one,conv:conv};
+})();
+
+  /* 介面文字：[中文, 西文, 英文] */
+  const T = {
+    brand:['數字聽力','Números en chino: Escucha','Chinese numbers: Listening'],
+    back:['返回選單','Volver al menú','Back to menu'],
+    h1:['數字快速練習','Práctica rápida de números','Quick number practice'],
+    sub:['每回合 1 分鐘 · 數字 0 到 9999','Cada ronda dura 1 minuto · Números del 0 al 9999','Each round lasts 1 minute · Numbers 0 to 9999'],
+    mode1:['模式 01','MODO 01','MODE 01'],
+    modeName:['聽力模式','Modo Escucha','Listening mode'],
+    modeDesc:['系統會唸出一個中文數字，請輸入你聽到的數字，按 Enter（或「確認」）。不論答對答錯，都會進入下一題。','El sistema dirá un número en chino. Escribe el número que escuchaste y pulsa Enter (o Confirmar). Pasarás a la siguiente pregunta sin importar si aciertas o no.','The app says a number in Chinese. Type what you heard and press Enter (or Confirm). You move on whether you are right or wrong.'],
+    synthNote:['ℹ️ 聲音由瀏覽器合成，有時聽起來會有點像機器人。','ℹ️ La voz la genera el navegador, así que a veces puede sonar robótica.','ℹ️ The voice is generated by your browser, so it may sound a bit robotic.'],
+    noVoice:['⚠️ 找不到中文語音。如果沒有聲音，請在手機或電腦的設定（輔助使用／語音）安裝中文語音，再重新開啟頁面。','⚠️ No encontramos una voz en chino. Si no oyes sonido, instala una voz en chino en los ajustes de tu dispositivo y vuelve a abrir la página.','⚠️ No Chinese voice found. If you hear nothing, install a Chinese voice in your device settings and reopen the page.'],
+    noSynth:['⚠️ 你的瀏覽器無法播放語音，請改用最新版 Chrome 或 Safari。','⚠️ Tu navegador no puede reproducir voz. Prueba con Chrome o Safari actualizado.','⚠️ Your browser cannot play speech. Try an updated Chrome or Safari.'],
+    ph:['輸入你聽到的數字','Escribe el número que escuchaste','Type the number you heard'],
+    confirm:['確認','Confirmar','Confirm'], next:['下一題','Siguiente','Next'],
+    replay:['🔊 再聽一次','🔊 Escuchar de nuevo','🔊 Listen again'],
+    timeUp:['時間到！','¡Se acabó el tiempo!','Time is up!'],
+    again:['再玩一次','Jugar de nuevo','Play again'],
+    right:['答對','Correctas','Correct'], wrong:['答錯','Incorrectas','Incorrect'], total:['總數','Total','Total'],
+    bySpeed:['各語速答對數','Correctas por velocidad','Correct by speed'],
+    missed:['答錯的數字','Números que fallaste','Numbers you missed'],
+    more:['還有 {n} 個','y {n} más','and {n} more'],
+    ok:['答對了！','¡Correcto!','Correct!'],
+    bad:['答錯了 · 正確答案是 {n}','Incorrecto · La respuesta correcta es {n}','Incorrect · The correct answer is {n}'],
+    slow:['慢','Lento','Slow'], normal:['正常','Normal','Normal'], fast:['快','Rápido','Fast'],
+    settings:['設定','Ajustes','Settings'], script:['字體','Caracteres','Characters'], lang:['語言','Idioma','Language'],
+    phon:['拼音／注音','Pinyin / Zhuyin','Pinyin / Zhuyin'], rate:['語速','Velocidad de voz','Voice speed'],
+    pinyin:['拼音','Pinyin','Pinyin'], zhuyin:['注音','Zhuyin','Zhuyin'], both:['兩者','Ambos','Both'], off:['關閉','Ninguno','Off'],
+    zhOnly:['只有中文','Solo chino','Chinese only'], done:['完成','Listo','Done']
+  };
+  // 中文＋小字翻譯（「只有中文」時沒有小字）
+  function tz(k){ return Z(T[k][0]); }
+  function tt(k){ return ONLYZH() ? '' : (Settings.lang === 'en' ? T[k][2] : T[k][1]); }
+  function tf(k, n){ return tz(k).replace('{n}', n); }
+  function tft(k, n){ return tt(k).replace('{n}', n); }
+  function tb(k, n){ const t = tft(k, n); return tf(k, n) + (t ? ' · ' + t : ''); }   // 一行：中文 · 翻譯
+  function tstack(k){ const t = tt(k); return esc(tz(k)) + (t ? '<small>' + esc(t) + '</small>' : ''); }
+  function applyUI(){
+    document.documentElement.lang = SIMP() ? 'zh-Hans' : 'zh-Hant';
+    document.querySelectorAll('[data-t]').forEach(n => { n.textContent = tb(n.dataset.t); });
+    document.querySelectorAll('[data-tp]').forEach(n => { n.placeholder = tb(n.dataset.tp); });
+    setConfirmLabel(awaitingNext);
+    updateVoiceNotice();
+    document.querySelectorAll('.speedBtn').forEach(b => b.classList.toggle('active', b.dataset.rate === Settings.rate));
+  }
+
+  // 台灣讀音：音節 + 聲調（含連續變調）
+  const NUM_SYL = {
+    '零':['ling',2],'一':['yi',1],'二':['er',4],'兩':['liang',3],'三':['san',1],'四':['si',4],'五':['wu',3],
+    '六':['liu',4],'七':['qi',1],'八':['ba',1],'九':['jiu',3],'十':['shi',2],'百':['bai',3],'千':['qian',1]
+  };
+  function markSyl(base, tone){
+    if (tone === 5) return base;
+    const M = { a:'āáǎà', e:'ēéěè', i:'īíǐì', o:'ōóǒò', u:'ūúǔù' };
+    let idx = base.indexOf('a');
+    if (idx < 0) idx = base.indexOf('e');
+    if (idx < 0) { for (let i = base.length - 1; i >= 0; i--) if ('iou'.includes(base[i])) { idx = i; break; } }
+    return base.slice(0, idx) + M[base[idx]][tone - 1] + base.slice(idx + 1);
+  }
+  function numberToSyllables(n){
+    const chars = [...numberToChinese(n)];
+    const tones = chars.map(c => NUM_SYL[c][1]);
+    const out = chars.map((c, i) => {
+      let t = tones[i];
+      const next = i + 1 < chars.length ? tones[i + 1] : 0;
+      if (c === '一' && next){ t = next === 4 ? 2 : 4; }          // 一＋四聲→yí，其餘→yì
+      else if (t === 3 && next === 3){ t = 2; }                    // 三聲＋三聲→二聲
+      return markSyl(NUM_SYL[c][0], t);
+    });
+    return out;
+  }
+  // 依設定回傳拼音／注音的 HTML（關閉時回傳空字串）
+  function phHtml(n, cls){
+    if (Settings.phon === 'off') return '';
+    const sy = numberToSyllables(n);
+    const py = sy.join(' '), zy = sy.map(x => ZY.one(x)).join(' ');
+    const line = (t, c) => '<span class="' + c + '">' + esc(t) + '</span>';
+    if (Settings.phon === 'pinyin') return line(py, cls);
+    if (Settings.phon === 'zhuyin') return line(zy, cls + ' zy');
+    return line(py, cls) + line(zy, cls + ' zy');
+  }
+  const cnShow = n => Z(numberToChinese(n));
 
   /* ============ Chinese numeral conversion (0–9999) ============ */
   const CN_DIGIT = ['零','一','二','三','四','五','六','七','八','九'];
@@ -536,15 +707,6 @@
       result += digitChar + CN_UNIT[unitPos];
     }
     return result;
-  }
-
-  // 台灣讀音的拼音（答錯時顯示用）。數字字元沿用上面 numberToChinese 的結果逐字轉換。
-  const CN_PINYIN = {
-    '零':'líng','一':'yī','二':'èr','兩':'liǎng','三':'sān','四':'sì','五':'wǔ',
-    '六':'liù','七':'qī','八':'bā','九':'jiǔ','十':'shí','百':'bǎi','千':'qiān'
-  };
-  function numberToPinyin(n){
-    return [...numberToChinese(n)].map(ch => CN_PINYIN[ch] || ch).join(' ');
   }
 
   // 出題數字的位數權重（相對比例）：千位數 40 : 百位數 45 : 十位/個位數（0-99）20
@@ -590,7 +752,9 @@
     const noSynth = !window.speechSynthesis;
     notice.hidden = !(noSynth || voiceFailed || !zhVoice);
     if (noSynth) {
-      notice.textContent = '⚠️ Tu navegador no puede reproducir voz. Prueba con Chrome o Safari actualizado.';
+      notice.textContent = tb('noSynth');
+    } else {
+      notice.textContent = tb('noVoice');
     }
   }
   function pickAndCheckVoice(){ pickVoice(); updateVoiceNotice(); }
@@ -600,14 +764,13 @@
   }
   // 語音清單常常晚一點才載入，等一下再判斷，避免一開始誤報
   setTimeout(updateVoiceNotice, 2000);
-  let speechRate = 1.0; // Súper Fácil 0.1 · Lento 0.6 · Normal 1.0 · Rápido 1.6
-  function speak(text){
+    function speak(text){
     if (!window.speechSynthesis) return;
     window.speechSynthesis.cancel();
     const utter = new SpeechSynthesisUtterance(text);
     utter.lang = 'zh-TW';
     if (zhVoice) utter.voice = zhVoice;
-    utter.rate = speechRate;
+    utter.rate = RATE_VALUE[Settings.rate];
     utter.onerror = (e) => {
       // 自己呼叫 cancel() 換下一題時也會觸發錯誤，那不算失敗
       if (e && (e.error === 'canceled' || e.error === 'interrupted')) return;
@@ -681,22 +844,25 @@
     stopTimer();
     if (window.speechSynthesis) window.speechSynthesis.cancel();
 
-    el('resultTitle').textContent = '¡Se acabó el tiempo!';
+    endSessionRender();
+    trackEvent('game_complete', { mode: 'listening', correct: correctCount, wrong: wrongCount, total: correctCount + wrongCount });
+    showScreen('result');
+  }
+  function endSessionRender(){
+    el('resultTitle').textContent = tb('timeUp');
     const stats = el('resultStats');
     const breakdown = el('speedBreakdown');
     const total = correctCount + wrongCount;
     stats.innerHTML =
-      statCard(correctCount, 'Correctas', 'correct') +
-      statCard(wrongCount, 'Incorrectas', 'wrong') +
-      statCard(total, 'Total', '');
+      statCard(correctCount, tb('right'), 'correct') +
+      statCard(wrongCount, tb('wrong'), 'wrong') +
+      statCard(total, tb('total'), '');
     breakdown.style.display = 'block';
-    breakdown.innerHTML = '<div class="speedBreakdownTitle">Correctas por velocidad</div>' +
+    breakdown.innerHTML = '<div class="speedBreakdownTitle">' + esc(tb('bySpeed')) + '</div>' +
       SPEED_LABELS.map(s =>
-        '<div class="speedRow"><span>' + s.label + '</span><span>' + (speedCorrectCounts[s.rate] || 0) + '</span></div>'
+        '<div class="speedRow"><span>' + esc(tb(s.key)) + '</span><span>' + (speedCorrectCounts[s.key] || 0) + '</span></div>'
       ).join('');
     renderWrongList();
-    trackEvent('game_complete', { mode: 'listening', correct: correctCount, wrong: wrongCount, total: total });
-    showScreen('result');
   }
 
   // 結果頁：這次答錯的數字（重複的只列一次，最多 10 個），附中文和拼音方便複習
@@ -710,14 +876,14 @@
       return;
     }
     const shown = unique.slice(0, WRONG_LIST_MAX);
-    box.innerHTML = '<div class="speedBreakdownTitle">Números que fallaste</div>' +
+    box.innerHTML = '<div class="speedBreakdownTitle">' + esc(tb('missed')) + '</div>' +
       shown.map(n =>
         '<div class="wrongRow"><span class="wrongNum">' + n + '</span>' +
-        '<span class="wrongText"><span class="wrongCn">' + numberToChinese(n) + '</span>' +
-        '<span class="wrongPy">' + numberToPinyin(n) + '</span></span></div>'
+        '<span class="wrongText"><span class="wrongCn">' + cnShow(n) + '</span>' +
+        phHtml(n, 'wrongPy') + '</span></div>'
       ).join('') +
       (unique.length > shown.length
-        ? '<div class="wrongMore">y ' + (unique.length - shown.length) + ' más</div>'
+        ? '<div class="wrongMore">' + esc(tb('more', unique.length - shown.length)) + '</div>'
         : '');
     box.style.display = 'block';
   }
@@ -741,16 +907,11 @@
   let correctionShownAt = 0;
   let wrongNumbers = [];
   const confirmBtn = el('confirmBtn');
-  function setConfirmLabel(next){ confirmBtn.textContent = next ? 'Siguiente' : 'Confirmar'; }
+  function setConfirmLabel(next){ confirmBtn.textContent = tb(next ? 'next' : 'confirm'); }
 
-  const SPEED_LABELS = [
-    { rate: 0.1, label: 'Súper Fácil' },
-    { rate: 0.6, label: 'Lento' },
-    { rate: 1.0, label: 'Normal' },
-    { rate: 1.6, label: 'Rápido' },
-  ];
+  const SPEED_LABELS = [ { key:'slow' }, { key:'normal' }, { key:'fast' } ];
   let speedCorrectCounts = {};
-  let currentQuestionRate = 1.0;
+  let currentQuestionRate = 'normal';
 
   function startListeningMode(){
     currentMode = 'listening';
@@ -777,11 +938,17 @@
     listenInput.value = '';
     listenFeedback.className = 'feedback';
     listenFeedback.innerHTML = '';
-    currentQuestionRate = speechRate;
+    currentQuestionRate = Settings.rate;
     speak(numberToChinese(currentNumber));
     if (screens.listening.classList.contains('active')) listenInput.focus();
   }
 
+  function renderWrongFeedback(){
+    listenFeedback.innerHTML =
+      '<div class="fbRow"><span class="stamp">✗</span><span class="msg">' + esc(tb('bad', currentNumber)) + '</span></div>' +
+      '<div class="correction"><span class="corrHanzi">' + cnShow(currentNumber) + '</span>' +
+      phHtml(currentNumber, 'corrPinyin') + '</div>';
+  }
   function submitListeningAnswer(){
     if (timeLeft <= 0) return;
     if (awaitingNext){
@@ -802,16 +969,13 @@
       correctCount++;
       speedCorrectCounts[currentQuestionRate] = (speedCorrectCounts[currentQuestionRate] || 0) + 1;
       listenFeedback.className = 'feedback correct';
-      listenFeedback.innerHTML = '<span class="stamp">✓</span><span class="msg">¡Correcto!</span>';
+      listenFeedback.innerHTML = '<span class="stamp">✓</span><span class="msg">' + esc(tb('ok')) + '</span>';
     } else {
       wrongCount++;
       wrongNumbers.push(currentNumber);
       // 答錯：停在這裡顯示中文和拼音，再唸一次標準讀法；倒數計時照常跑，由學生按「Siguiente」才換下一題
       listenFeedback.className = 'feedback wrong withCorrection';
-      listenFeedback.innerHTML =
-        '<div class="fbRow"><span class="stamp">✗</span><span class="msg">Incorrecto · La respuesta correcta es ' + currentNumber + '</span></div>' +
-        '<div class="correction"><span class="corrHanzi">' + numberToChinese(currentNumber) + '</span>' +
-        '<span class="corrPinyin">' + numberToPinyin(currentNumber) + '</span></div>';
+      renderWrongFeedback();
       awaitingNext = true;
       correctionShownAt = Date.now();
       setConfirmLabel(true);
@@ -845,16 +1009,49 @@
     btn.addEventListener('click', () => {
       document.querySelectorAll('.speedBtn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
-      speechRate = parseFloat(btn.dataset.rate);
-      trackEvent('select_speed', { rate: speechRate, label: btn.textContent });
+      Settings.rate = btn.dataset.rate; saveSettings();
+      trackEvent('select_speed', { rate: Settings.rate });
     });
   });
 
   el('replayBtn').addEventListener('click', () => {
-    currentQuestionRate = speechRate;
+    currentQuestionRate = Settings.rate;
     speak(numberToChinese(currentNumber));
     if (!awaitingNext) listenInput.focus();
   });
+
+
+  /* ============ ⚙️ 設定視窗 ============ */
+  const setOpt = (label, on, k, v) => '<button type="button" class="opt ' + (on ? 'on' : '') + '" data-k="' + k + '" data-v="' + v + '">' + label + '</button>';
+  function drawSet(){
+    const o = el('setov');
+    o.innerHTML = '<div class="ovCard"><h2>⚙️ ' + esc(tb('settings')) + '</h2>' +
+      '<div class="setGroup"><h3>' + tstack('script') + '</h3><div class="opts">' + setOpt('繁體', Settings.script==='trad','script','trad') + setOpt('简体', Settings.script==='simp','script','simp') + '</div></div>' +
+      '<div class="setGroup"><h3>' + tstack('lang') + '</h3><div class="opts">' + setOpt('中文＋<small>Español</small>', Settings.lang==='es','lang','es') + setOpt('中文＋<small>English</small>', Settings.lang==='en','lang','en') + setOpt(esc(tz('zhOnly')), Settings.lang==='zh','lang','zh') + '</div></div>' +
+      '<div class="setGroup"><h3>' + tstack('phon') + '</h3><div class="opts two">' + ['pinyin','zhuyin','both','off'].map(v => setOpt(tstack(v), Settings.phon===v,'phon',v)).join('') + '</div></div>' +
+      '<div class="setGroup"><h3>' + tstack('rate') + '</h3><div class="opts">' + ['slow','normal','fast'].map(v => setOpt(tstack(v), Settings.rate===v,'rate',v)).join('') + '</div></div>' +
+      '<button type="button" id="setDone">' + esc(tb('done')) + '</button></div>';
+    o.querySelectorAll('.opt').forEach(b => b.addEventListener('click', () => setS(b.dataset.k, b.dataset.v)));
+    el('setDone').addEventListener('click', closeSet);
+  }
+  function openSet(){ drawSet(); el('setov').classList.remove('hide'); }
+  function closeSet(){ el('setov').classList.add('hide'); }
+  function refreshAll(){ applyUI(); if (awaitingNext) renderWrongFeedback(); if (!el('setov').classList.contains('hide')) drawSet(); if (screens.result.classList.contains('active')) endSessionRender(); }
+  function setS(k, v){
+    if (!SET_OPTS[k] || !SET_OPTS[k].includes(v)) return;
+    Settings[k] = v; saveSettings();
+    const after = () => { refreshAll(); if (k === 'rate') speak(numberToChinese(1234)); };
+    if (k === 'script' && v === 'simp' && !_t2s) loadT2S().then(after); else after();
+  }
+  el('gearBtn').addEventListener('click', openSet);
+  el('setov').addEventListener('click', e => { if (e.target.id === 'setov') closeSet(); });
+  window.addEventListener('storage', e => {
+    if (e.key !== SETTINGS_KEY) return;
+    Object.assign(Settings, readSettings());
+    if (SIMP() && !_t2s) loadT2S().then(refreshAll); else refreshAll();
+  });
+  if (SIMP()) loadT2S().then(applyUI);
+  applyUI();
 
   /* ============ Nav ============ */
   el('startListening').addEventListener('click', () => {
