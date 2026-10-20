@@ -539,6 +539,17 @@
   #setDone{ font-size:17px; padding:10px 34px; line-height:1.3; }
   #setDone small{ font-size:11.5px; opacity:.85; }
 
+  /* 難度選擇 */
+  .levelBox{ margin:0 0 22px; text-align:center; }
+  .levelTitle{ font-size:15px; color:var(--ink-soft); margin-bottom:8px; line-height:1.3; }
+  .levelTitle small{ font-size:11.5px; }
+  .levelSel{ display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
+  .lvBtn{ background:none; border:1px solid var(--line); color:var(--ink-soft); font-family:inherit; font-size:16px; padding:9px 18px; border-radius:20px; cursor:pointer; line-height:1.3; text-align:center; }
+  .lvBtn small{ font-size:11.5px; }
+  .lvBtn:hover{ border-color:var(--gold); color:var(--ink); }
+  .lvBtn.active{ background:var(--ink); border-color:var(--ink); color:var(--paper); font-weight:700; }
+  .wrongText{ width:min(240px, calc(100% - 90px)); }
+
   /* 手機 */
   @media (max-width:560px){
     #topbar{ padding:10px 14px; gap:8px; }
@@ -578,6 +589,14 @@
     <section id="menuScreen" class="screen active">
       <h1 data-t="h1"></h1>
       <p class="sub" data-t="sub"></p>
+      <div class="levelBox">
+        <div class="levelTitle" data-t="levelTitle"></div>
+        <div id="levelSelector" class="levelSel" role="group">
+          <button type="button" class="lvBtn" data-level="basic" data-t="lvBasic"></button>
+          <button type="button" class="lvBtn" data-level="five" data-t="lvFive"></button>
+          <button type="button" class="lvBtn" data-level="all" data-t="lvAll"></button>
+        </div>
+      </div>
       <div class="modeCards">
         <button class="modeCard" id="startListening" type="button">
           <span class="modeNum" data-t="mode1"></span>
@@ -706,7 +725,11 @@
     brand:['數字聽力','Números en chino: Escucha','Chinese numbers: Listening'],
     back:['返回選單','Volver al menú','Back to menu'],
     h1:['數字快速練習','Práctica rápida de números','Quick number practice'],
-    sub:['每回合 1 分鐘 · 數字 0 到 9999','Cada ronda dura 1 minuto · Números del 0 al 9999','Each round lasts 1 minute · Numbers 0 to 9999'],
+    sub:['每回合 1 分鐘 · 數字 {n}','Cada ronda dura 1 minuto · Números {n}','Each round lasts 1 minute · Numbers {n}'],
+    levelTitle:['難度','Dificultad','Difficulty'],
+    lvBasic:['0–9999（預設）','0–9999 (por defecto)','0–9999 (default)'],
+    lvFive:['只出 10000–99999','Solo 10000–99999','Only 10000–99999'],
+    lvAll:['0–99999 混合','0–99999 mezclado','0–99999 mixed'],
     mode1:['模式 01','MODO 01','MODE 01'],
     modeName:['聽力模式','Modo Escucha','Listening mode'],
     modeDesc:['系統會唸出一個中文數字，請輸入你聽到的數字，按 Enter（或「確認」）。不論答對答錯，都會進入下一題。','El sistema dirá un número en chino. Escribe el número que escuchaste y pulsa Enter (o Confirmar). Pasarás a la siguiente pregunta sin importar si aciertas o no.','The app says a number in Chinese. Type what you heard and press Enter (or Confirm). You move on whether you are right or wrong.'],
@@ -740,7 +763,8 @@
   function tstack(k){ const t = tt(k); return esc(tz(k)) + (t ? '<small>' + esc(t) + '</small>' : ''); }
   function applyUI(){
     document.documentElement.lang = SIMP() ? 'zh-Hans' : 'zh-Hant';
-    document.querySelectorAll('[data-t]').forEach(n => { n.innerHTML = th(n.dataset.t); });
+    document.querySelectorAll('[data-t]').forEach(n => { n.innerHTML = th(n.dataset.t, levelLabel()); });
+    document.querySelectorAll('.lvBtn').forEach(b => { b.classList.toggle('active', b.dataset.level === level); b.setAttribute('aria-pressed', b.dataset.level === level); });
     document.querySelectorAll('[data-tt]').forEach(n => { const t = tt(n.dataset.tt); n.textContent = t; n.hidden = !t; });
     document.querySelectorAll('[data-tp]').forEach(n => { n.placeholder = tf(n.dataset.tp); });
     setConfirmLabel(awaitingNext);
@@ -751,7 +775,7 @@
   // 台灣讀音：音節 + 聲調（含連續變調）
   const NUM_SYL = {
     '零':['ling',2],'一':['yi',1],'二':['er',4],'兩':['liang',3],'三':['san',1],'四':['si',4],'五':['wu',3],
-    '六':['liu',4],'七':['qi',1],'八':['ba',1],'九':['jiu',3],'十':['shi',2],'百':['bai',3],'千':['qian',1]
+    '六':['liu',4],'七':['qi',1],'八':['ba',1],'九':['jiu',3],'十':['shi',2],'百':['bai',3],'千':['qian',1],'萬':['wan',4]
   };
   function markSyl(base, tone){
     if (tone === 5) return base;
@@ -785,9 +809,9 @@
   }
   const cnShow = n => Z(numberToChinese(n));
 
-  /* ============ Chinese numeral conversion (0–9999) ============ */
+  /* ============ Chinese numeral conversion (0–99999) ============ */
   const CN_DIGIT = ['零','一','二','三','四','五','六','七','八','九'];
-  const CN_UNIT = ['','十','百','千'];
+  const CN_UNIT = ['','十','百','千','萬'];
 
   function numberToChinese(n){
     if (n === 0) return '零';
@@ -807,7 +831,7 @@
         needZero = false;
       }
       let digitChar = CN_DIGIT[d];
-      if (d === 2 && unitPos >= 2) digitChar = '兩'; // 兩百 / 兩千
+      if (d === 2 && unitPos >= 2) digitChar = '兩'; // 兩百 / 兩千 / 兩萬
       if (d === 1 && unitPos === 1 && result === '') digitChar = ''; // 十 not 一十 at the start
       result += digitChar + CN_UNIT[unitPos];
     }
@@ -822,13 +846,24 @@
   ];
   const DIGIT_RANGES_TOTAL = DIGIT_RANGES.reduce((sum, r) => sum + r.weight, 0);
 
+  // 難度：basic = 0–9999（預設）、five = 只出 10000–99999、all = 兩者混合（各約一半）
+  const LEVEL_KEY = 'numeros.level';
+  const LEVELS = ['basic','five','all'];
+  const FIVE_RANGE = { min: 10000, max: 99999, weight: DIGIT_RANGES_TOTAL };
+  let level = 'basic';
+  try{ const v = localStorage.getItem(LEVEL_KEY); if (LEVELS.includes(v)) level = v; }catch(e){}
+  const levelRanges = () => level === 'five' ? [FIVE_RANGE] : level === 'all' ? [FIVE_RANGE].concat(DIGIT_RANGES) : DIGIT_RANGES;
+  const levelLabel = () => level === 'five' ? '10000–99999' : level === 'all' ? '0–99999' : '0–9999';
+
   function pickWeightedRange(){
-    let r = Math.random() * DIGIT_RANGES_TOTAL;
-    for (const range of DIGIT_RANGES){
+    const ranges = levelRanges();
+    const total = ranges.reduce((sum, r) => sum + r.weight, 0);
+    let r = Math.random() * total;
+    for (const range of ranges){
       if (r < range.weight) return range;
       r -= range.weight;
     }
-    return DIGIT_RANGES[DIGIT_RANGES.length - 1];
+    return ranges[ranges.length - 1];
   }
 
   function randomNumber(exclude){
@@ -1159,6 +1194,11 @@
   applyUI();
 
   /* ============ Nav ============ */
+  document.querySelectorAll('.lvBtn').forEach(b => b.addEventListener('click', () => {
+    level = b.dataset.level;
+    try{ localStorage.setItem(LEVEL_KEY, level); }catch(e){}
+    applyUI();
+  }));
   el('startListening').addEventListener('click', () => {
     trackEvent('select_mode', { mode: 'listening' });
     startListeningMode();
