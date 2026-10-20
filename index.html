@@ -772,7 +772,7 @@
     document.querySelectorAll('.speedBtn').forEach(b => b.classList.toggle('active', b.dataset.rate === Settings.rate));
   }
 
-  // 台灣讀音：音節 + 聲調（含連續變調）
+  // 台灣讀音：音節 + 聲調（只有「一」變調，其他字唸本調）
   const NUM_SYL = {
     '零':['ling',2],'一':['yi',1],'二':['er',4],'兩':['liang',3],'三':['san',1],'四':['si',4],'五':['wu',3],
     '六':['liu',4],'七':['qi',1],'八':['ba',1],'九':['jiu',3],'十':['shi',2],'百':['bai',3],'千':['qian',1],'萬':['wan',4]
@@ -790,9 +790,11 @@
     const tones = chars.map(c => NUM_SYL[c][1]);
     const out = chars.map((c, i) => {
       let t = tones[i];
-      const next = i + 1 < chars.length ? tones[i + 1] : 0;
-      if (c === '一' && next){ t = next === 4 ? 2 : 4; }          // 一＋四聲→yí，其餘→yì
-      else if (t === 3 && next === 3){ t = 2; }                    // 三聲＋三聲→二聲
+      // 只有「一」變調：後面接萬→yí、接百／千→yì；接十或在最後→維持 yī。其他字一律唸本調（不做三聲連讀）
+      if (c === '一' && i + 1 < chars.length){
+        const nc = chars[i + 1];
+        if (nc === '萬') t = 2; else if (nc === '百' || nc === '千') t = 4;
+      }
       return markSyl(NUM_SYL[c][0], t);
     });
     return out;
