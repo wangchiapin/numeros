@@ -883,7 +883,7 @@
     const voices = window.speechSynthesis ? window.speechSynthesis.getVoices() : [];
     zhVoice = voices.find(v => v.lang === 'zh-TW')
       || voices.find(v => v.lang && v.lang.toLowerCase().startsWith('zh-tw'))
-      || voices.find(v => v.lang && v.lang.toLowerCase().startsWith('zh'))
+      || voices.find(v => v.lang && v.lang.toLowerCase().startsWith('zh') && !/^(yue|zh[-_]hk)/i.test(v.lang))   /* 排除廣東話 */
       || null;
   }
   // 找不到中文語音、或唸的時候出錯時，在畫面上方提示一行（聽得到聲音的人不會看到）
