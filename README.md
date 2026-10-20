@@ -1,7 +1,9 @@
-# Números en Chino: Escucha
+# 數字聽力練習
 
-> 中文數字聽力練習
+> Números en Chino: Escucha · 聽中文念出數字，輸入你聽到的數字（每回合 1 分鐘）
 
+- **難度：** 0–9999（預設）、10000–99999、0–99999 混合；選擇會記在瀏覽器
+- **設定：** ⚙️ 可選繁／簡體、介面語言（西文／英文／只有中文）、拼音／注音、語速
 - **網址：** https://wangchiapin.github.io/numeros/
 - **Firebase 專案：** 不使用 Firebase
 - **登入方式：** —
