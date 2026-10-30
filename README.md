@@ -27,3 +27,12 @@
 ## 手機瀏覽器備註：捲動後回不到頂端（2026-10-24）
 iPhone 版 Chrome 上，頁面可以捲動時，往下捲之後有時回不到最上面（Safari 正常）。
 本遊戲原本就有 `maximum-scale=1` 與 `html{color-scheme:light}`，手機 Chrome 測試正常。新增頁面請照這個寫（見 game-kit README）。
+
+## 測試
+
+`PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers python3 tests/test_numeros.py`（Python + Playwright；擋掉外部網路，用假的 Firebase 和假的語音，不碰真的資料庫）
+
+- 目前 71 項檢查（2026-10-30 建立）。
+- 涵蓋：念法表 31 例（兩百、一萬兩千三百四十五…）、三種難度範圍、答對／答錯／訂正／下一題、60 秒結束、語速三檔、字形×拼音注音訂正畫面。
+- 改了遊戲的計分、設定、排行榜或畫面文字後，推上去之前先跑一次。
+- 驗證方式：另外複製一份遊戲、故意改壞一個地方，測試會出現 FAIL。
